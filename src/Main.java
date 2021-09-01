@@ -47,7 +47,7 @@ public class Main {
     private final ArrayList<State> states = new ArrayList<>();
 
     private Main() {
-        //TODO replace with an actual input of the name instead of taking a value in the clode
+        //TODO replace with an actual input of the name instead of taking a value in the code
         String nationName = testNationName;
         nationName = nationName.replaceAll(" ", "");
         loadNation(nationName);
