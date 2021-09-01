@@ -12,7 +12,7 @@ public class State {
     private int buildingSlots;
     private int milFactories;
     private int civFactories;
-    private int techLevel = 0;
+    private int civTechLevel = 0;
 
     private boolean civUnderConstruction;
     private double currentCivProduction;
@@ -29,8 +29,9 @@ public class State {
         baseCivFactories = newCivFactories;
         civFactories = newCivFactories;
     }
-    public void upTechLevel() {
-        techLevel++;
+    public void upCivTechLevel() {
+        civTechLevel++;
+        buildingSlots = (int) (baseBuildingSlots * Math.pow(1.2, civTechLevel));
     }
     public int getMilFactories() {
         return milFactories;
@@ -38,8 +39,11 @@ public class State {
     public int getCivFactories() {
         return civFactories;
     }
-    public int getBuildingSlots() {
-        return (int) (baseBuildingSlots * Math.pow(1.2, techLevel));
+    public int getFreeBuildingSlots() {
+        return buildingSlots - civFactories - milFactories - baseDockyards;
+    }
+    public int getInfrastructureLevel() {
+        return baseInfrastructure;
     }
     public double addCivProduction(double productionToAdd) {
         double overflowProduction = 0;

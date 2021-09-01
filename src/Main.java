@@ -6,19 +6,21 @@ import java.util.Scanner;
 public class Main {
     //CONSTANTS
     private static final double PRODUCTION_PER_CIV_FACTORY = 5;
-    private static final double PRODUCTION_PER_MIL_FACTORY = 2.25; //this is half of the actual value, but is used as an
-    // approximation of production efficiency until that is implemented.
-    private static final int MILITARY_FACTORY_COST = 7200;
-    private static final int CIVILIAN_FACTORY_COST = 10800;
+    private static final double PRODUCTION_PER_MIL_FACTORY = 2.25; //half the actual value, approximates production efficiency
+    private static final int MAXIMUM_CIV_FACTORIES_PER_PROJECT = 15;
+    private static final int MAXIMUM_INFRASTRUCTURE_LEVEL = 10;
     private static final String GAME_DATA_FILE = "stateInformationProcessed.csv";
 
     //INPUTS
     private static final String testNationName = "Soviet Union";
     private static final int testWarDays = 1999; //days from the beginning of 1936 to barbarossa
 
-    //running totals
+    //running total
     private double totalMilProduction = 0;
-    private double currentCivProduction = 0;
+
+    //initial values for comparison
+    private final int startingMilFactories;
+    private final int startingCivFactories;
 
     //states storage
     private final ArrayList<State> states = new ArrayList<>();
@@ -27,9 +29,18 @@ public class Main {
         String nationName = testNationName;
         nationName = nationName.replaceAll(" ", "");
         loadNation(nationName);
+        startingMilFactories = countMilFactories();
+        startingCivFactories = countCivFactories();
         for (int i = 0; i < testWarDays; i++) {
             dayLoop();
+            System.out.println("Day #" + i + " completed");
         }
+        System.out.println("Start Military Factories:  " + startingMilFactories);
+        System.out.println("Start Civilian Factories:  " + startingCivFactories);
+        System.out.println("========");
+        System.out.println("Total Military Production: " + totalMilProduction);
+        System.out.println("Total Military Factories:  " + countMilFactories());
+        System.out.println("Total Civilian Factories:  " + countCivFactories());
     }
     private void dayLoop() {
         int milFactories = 0;
@@ -40,8 +51,39 @@ public class Main {
         }
         //TODO implement proper production efficiency
         totalMilProduction += milFactories * PRODUCTION_PER_MIL_FACTORY;
+        //TODO account for various buffs and de-buffs
+        double civProduction = civFactories * PRODUCTION_PER_CIV_FACTORY;
+        int currentState = 0;
+        while (civProduction > 0 && currentState != states.size()) {
+            if (states.get(currentState).getFreeBuildingSlots() != 0) {
+                double civProductionBlock;
+                if (civProduction >= MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY) {
+                    civProductionBlock = civProduction - (MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
+                } else {
+                    civProductionBlock = civProduction;
+                }
+                civProduction -= civProductionBlock;
+                states.get(currentState).addCivProduction(civProductionBlock);
+            }
+            currentState++;
+        }
+    }
+    private int countCivFactories() {
+        int civFactories = 0;
+        for (State state : states) {
+            civFactories += state.getCivFactories();
+        }
+        return civFactories;
+    }
+    private int countMilFactories() {
+        int milFactories = 0;
+        for (State state : states) {
+            milFactories += state.getMilFactories();
+        }
+        return milFactories;
     }
     private void loadNation(String nationName) {
+        ArrayList<State> initialStates = new ArrayList<>();
         File dataFile = new File(GAME_DATA_FILE);
         try {
             Scanner nationDataReader = new Scanner(dataFile);
@@ -57,7 +99,7 @@ public class Main {
                     int milFactories = Integer.parseInt(stateInfo[3]);
                     int dockyards = Integer.parseInt(stateInfo[4]);
                     int civFactories = Integer.parseInt(stateInfo[5]);
-                    states.add(new State(infrastructure, buildingSlots, milFactories, dockyards, civFactories));
+                    initialStates.add(new State(infrastructure, buildingSlots, milFactories, dockyards, civFactories));
                 }
                 if (stateInfo[0].equals("0")) {
                     reachedEnd = true;
@@ -67,6 +109,15 @@ public class Main {
             System.out.println("data file could not be opened");
         } catch (NumberFormatException e) {
             System.out.println("data file appears to have errors");
+        }
+        int lastInfrastructureLevel = MAXIMUM_INFRASTRUCTURE_LEVEL;
+        while (initialStates.size() != states.size()) {
+            for (State state : initialStates) {
+                if (state.getInfrastructureLevel() == lastInfrastructureLevel) {
+                    states.add(state);
+                }
+            }
+            lastInfrastructureLevel--;
         }
     }
     public static void main(String[] args) {
