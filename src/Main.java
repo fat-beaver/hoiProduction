@@ -38,13 +38,13 @@ public class Main {
     //INPUTS
     private static final String testNationName = "Soviet Union";
     private static final int testWarDays = 1999; //days from the beginning of 1936 to barbarossa
-        private static final int testCutoffDay = 1000;
+    private static final int testCutoffDay = 0;
 
     //running total
     private double totalMilProduction = 0;
 
     //states storage
-    private final ArrayList<State> states = new ArrayList<>();
+    private State[] states;
 
     private Main() {
         //TODO replace with an actual input of the name instead of taking a value in the code
@@ -75,15 +75,15 @@ public class Main {
         double constructionPoints = countCivFactories() * PRODUCTION_PER_CIV_FACTORY;
         //go through the list of states and assign the maximum number of factories to each construction until run out
         int currentState = 0;
-        while (constructionPoints > 0 && currentState != states.size()) {
-            if (states.get(currentState).getFreeBuildingSlots() != 0) {
+        while (constructionPoints > 0 && currentState != states.length) {
+            if (states[currentState].getFreeBuildingSlots() != 0) {
                 double constructionBlock = Math.min(constructionPoints, MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
                 constructionPoints -= constructionBlock;
                 //choose whether to build civ or mil factories after calculating the size of the construction block
-                if (currentDay < testCutoffDay || states.get(currentState).isCivUnderConstruction()) {
-                    states.get(currentState).addCivConstruction(constructionBlock);
+                if (currentDay < testCutoffDay || states[currentState].isCivUnderConstruction()) {
+                    states[currentState].addCivConstruction(constructionBlock);
                 } else {
-                    states.get(currentState).addMilConstruction(constructionBlock);
+                    states[currentState].addMilConstruction(constructionBlock);
                 }
             }
             //move on to the next state
@@ -138,10 +138,13 @@ public class Main {
         }
         //sort the states by infrastructure level and then add them to the main arraylist
         int lastInfrastructureLevel = MAXIMUM_INFRASTRUCTURE_LEVEL;
-        while (initialStates.size() != states.size()) {
+        states = new State[initialStates.size()];
+        int currentSlot = 0;
+        while (currentSlot < states.length) {
             for (State state : initialStates) {
                 if (state.getInfrastructureLevel() == lastInfrastructureLevel) {
-                    states.add(state);
+                    states[currentSlot] = state;
+                    currentSlot++;
                 }
             }
             lastInfrastructureLevel--;
