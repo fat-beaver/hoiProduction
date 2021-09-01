@@ -29,8 +29,6 @@ public class State {
     //basic starting info
     private final int baseInfrastructure;
     private final int baseBuildingSlots;
-    private final int baseMilFactories;
-    private final int baseCivFactories;
     private final int baseDockyards; //Only recorded because they take up slots that cannot be used by factories.
     //current info
     private int buildingSlots;
@@ -47,13 +45,12 @@ public class State {
         baseInfrastructure = newInfrastructure;
         baseBuildingSlots = newBuildingSlots;
         buildingSlots = newBuildingSlots;
-        baseMilFactories = newMilFactories;
         milFactories = newMilFactories;
         baseDockyards = newDockyards;
-        baseCivFactories = newCivFactories;
         civFactories = newCivFactories;
     }
     public void upCivTechLevel() {
+        //increase the concentrated/dispersed industry tech for building slots
         civTechLevel++;
         buildingSlots = (int) (baseBuildingSlots * Math.pow(1.2, civTechLevel));
     }
@@ -76,6 +73,7 @@ public class State {
         return milUnderConstruction;
     }
     public void addCivConstruction(double productionToAdd) {
+        //add the given amount of production to factory construction progress and add a factory if required
         productionToAdd *= (1 + baseInfrastructure * 0.1);
         if (civUnderConstruction) {
             currentCivProduction += productionToAdd;
@@ -90,6 +88,7 @@ public class State {
         }
     }
     public void addMilConstruction(double productionToAdd) {
+        //add the given amount of production to factory construction progress and add a factory if required
         productionToAdd *= (1 + baseInfrastructure * 0.1);
         if (milUnderConstruction) {
             currentMilProduction += productionToAdd;

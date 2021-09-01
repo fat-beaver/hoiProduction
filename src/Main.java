@@ -47,15 +47,18 @@ public class Main {
     private final ArrayList<State> states = new ArrayList<>();
 
     private Main() {
+        //TODO replace with an actual input of the name instead of taking a value in the clode
         String nationName = testNationName;
         nationName = nationName.replaceAll(" ", "");
         loadNation(nationName);
         //initial values for comparison
         int startingMilFactories = countMilFactories();
         int startingCivFactories = countCivFactories();
+        //do the actual processing
         for (int i = 0; i < testWarDays; i++) {
             dayLoop(i);
         }
+        //print out some basic information for comparison
         System.out.println("Start Military Factories:  " + startingMilFactories);
         System.out.println("Start Civilian Factories:  " + startingCivFactories);
         System.out.println("========");
@@ -64,31 +67,32 @@ public class Main {
         System.out.println("Total Civilian Factories:  " + countCivFactories());
     }
     private void dayLoop(int currentDay) {
+        //add the military production for the day to the total
         //TODO implement proper production efficiency
         totalMilProduction += countMilFactories() * PRODUCTION_PER_MIL_FACTORY;
+        //calculate how much construction to do
         //TODO account for various buffs and de-buffs
         double constructionPoints = countCivFactories() * PRODUCTION_PER_CIV_FACTORY;
+        //go through the list of states and assign the maximum number of factories to each construction until run out
         int currentState = 0;
         while (constructionPoints > 0 && currentState != states.size()) {
             if (states.get(currentState).getFreeBuildingSlots() != 0) {
-                double constructionBlock;
-                if (constructionPoints >= MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY) {
-                    constructionBlock = constructionPoints - (MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
-                } else {
-                    constructionBlock = constructionPoints;
-                }
+                double constructionBlock = Math.min(constructionPoints, MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
                 constructionPoints -= constructionBlock;
+                //choose whether to build civ or mil factories after calculating the size of the construction block
                 if (currentDay < testCutoffDay || states.get(currentState).isCivUnderConstruction()) {
                     states.get(currentState).addCivConstruction(constructionBlock);
                 } else {
                     states.get(currentState).addMilConstruction(constructionBlock);
                 }
             }
+            //move on to the next state
             currentState++;
         }
     }
     private int countCivFactories() {
         int civFactories = 0;
+        //loop through the list of states to count how many civ factories the country has
         for (State state : states) {
             civFactories += state.getCivFactories();
         }
@@ -96,18 +100,21 @@ public class Main {
     }
     private int countMilFactories() {
         int milFactories = 0;
+        //loop through the list of states to count how many mil factories the country has
         for (State state : states) {
             milFactories += state.getMilFactories();
         }
         return milFactories;
     }
     private void loadNation(String nationName) {
+        //create a structure to hold all of the states before they get added to the simulation properly
         ArrayList<State> initialStates = new ArrayList<>();
+        //read required state and country data from the included data file
         File dataFile = new File(GAME_DATA_FILE);
         try {
             Scanner nationDataReader = new Scanner(dataFile);
-            nationDataReader.nextLine(); //remove headings
-
+            //remove the human-readable headings
+            nationDataReader.nextLine();
             boolean reachedEnd = false;
             while (nationDataReader.hasNextLine() && !reachedEnd) {
                 String readLine = nationDataReader.nextLine();
@@ -129,6 +136,7 @@ public class Main {
         } catch (NumberFormatException e) {
             System.out.println("data file appears to have errors");
         }
+        //sort the states by infrastructure level and then add them to the main arraylist
         int lastInfrastructureLevel = MAXIMUM_INFRASTRUCTURE_LEVEL;
         while (initialStates.size() != states.size()) {
             for (State state : initialStates) {
