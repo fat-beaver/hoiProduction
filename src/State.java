@@ -45,8 +45,13 @@ public class State {
     public int getInfrastructureLevel() {
         return baseInfrastructure;
     }
-    public double addCivProduction(double productionToAdd) {
-        double overflowProduction = 0;
+    public boolean isCivUnderConstruction() {
+        return civUnderConstruction;
+    }
+    public boolean isMilUnderConstruction() {
+        return milUnderConstruction;
+    }
+    public void addCivConstruction(double productionToAdd) {
         productionToAdd *= (1 + baseInfrastructure * 0.1);
         if (civUnderConstruction) {
             currentCivProduction += productionToAdd;
@@ -55,14 +60,11 @@ public class State {
             currentCivProduction = productionToAdd;
         }
         if (currentCivProduction >= CIVILIAN_FACTORY_COST) {
-            overflowProduction = (currentCivProduction - CIVILIAN_FACTORY_COST) / (1 + baseInfrastructure * 0.1);
             currentCivProduction = 0;
             civFactories +=1;
         }
-        return overflowProduction;
     }
-    public double addMilProduction(double productionToAdd) {
-        double overflowProduction = 0;
+    public void addMilConstruction(double productionToAdd) {
         productionToAdd *= (1 + baseInfrastructure * 0.1);
         if (milUnderConstruction) {
             currentMilProduction += productionToAdd;
@@ -71,11 +73,9 @@ public class State {
             currentMilProduction = productionToAdd;
         }
         if (currentMilProduction >= MILITARY_FACTORY_COST) {
-            overflowProduction = (currentMilProduction - MILITARY_FACTORY_COST) / (1 + baseInfrastructure * 0.1);
             currentMilProduction = 0;
             milFactories +=1;
             milUnderConstruction = false;
         }
-        return overflowProduction;
     }
 }

@@ -52,18 +52,18 @@ public class Main {
         //TODO implement proper production efficiency
         totalMilProduction += milFactories * PRODUCTION_PER_MIL_FACTORY;
         //TODO account for various buffs and de-buffs
-        double civProduction = civFactories * PRODUCTION_PER_CIV_FACTORY;
+        double constructionPoints = civFactories * PRODUCTION_PER_CIV_FACTORY;
         int currentState = 0;
-        while (civProduction > 0 && currentState != states.size()) {
+        while (constructionPoints > 0 && currentState != states.size()) {
             if (states.get(currentState).getFreeBuildingSlots() != 0) {
-                double civProductionBlock;
-                if (civProduction >= MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY) {
-                    civProductionBlock = civProduction - (MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
+                double constructionBlock;
+                if (constructionPoints >= MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY) {
+                    constructionBlock = constructionPoints - (MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
                 } else {
-                    civProductionBlock = civProduction;
+                    constructionBlock = constructionPoints;
                 }
-                civProduction -= civProductionBlock;
-                states.get(currentState).addCivProduction(civProductionBlock);
+                constructionPoints -= constructionBlock;
+                states.get(currentState).addCivConstruction(constructionBlock);
             }
             currentState++;
         }
