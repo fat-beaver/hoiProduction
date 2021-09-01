@@ -14,13 +14,10 @@ public class Main {
     //INPUTS
     private static final String testNationName = "Soviet Union";
     private static final int testWarDays = 1999; //days from the beginning of 1936 to barbarossa
+        private static final int testCutoffDay = 1000;
 
     //running total
     private double totalMilProduction = 0;
-
-    //initial values for comparison
-    private final int startingMilFactories;
-    private final int startingCivFactories;
 
     //states storage
     private final ArrayList<State> states = new ArrayList<>();
@@ -29,11 +26,11 @@ public class Main {
         String nationName = testNationName;
         nationName = nationName.replaceAll(" ", "");
         loadNation(nationName);
-        startingMilFactories = countMilFactories();
-        startingCivFactories = countCivFactories();
+        //initial values for comparison
+        int startingMilFactories = countMilFactories();
+        int startingCivFactories = countCivFactories();
         for (int i = 0; i < testWarDays; i++) {
-            dayLoop();
-            System.out.println("Day #" + i + " completed");
+            dayLoop(i);
         }
         System.out.println("Start Military Factories:  " + startingMilFactories);
         System.out.println("Start Civilian Factories:  " + startingCivFactories);
@@ -42,17 +39,11 @@ public class Main {
         System.out.println("Total Military Factories:  " + countMilFactories());
         System.out.println("Total Civilian Factories:  " + countCivFactories());
     }
-    private void dayLoop() {
-        int milFactories = 0;
-        int civFactories = 0;
-        for (State state : states) {
-            milFactories += state.getMilFactories();
-            civFactories += state.getCivFactories();
-        }
+    private void dayLoop(int currentDay) {
         //TODO implement proper production efficiency
-        totalMilProduction += milFactories * PRODUCTION_PER_MIL_FACTORY;
+        totalMilProduction += countMilFactories() * PRODUCTION_PER_MIL_FACTORY;
         //TODO account for various buffs and de-buffs
-        double constructionPoints = civFactories * PRODUCTION_PER_CIV_FACTORY;
+        double constructionPoints = countCivFactories() * PRODUCTION_PER_CIV_FACTORY;
         int currentState = 0;
         while (constructionPoints > 0 && currentState != states.size()) {
             if (states.get(currentState).getFreeBuildingSlots() != 0) {
@@ -63,7 +54,11 @@ public class Main {
                     constructionBlock = constructionPoints;
                 }
                 constructionPoints -= constructionBlock;
-                states.get(currentState).addCivConstruction(constructionBlock);
+                if (currentDay < testCutoffDay || states.get(currentState).isCivUnderConstruction()) {
+                    states.get(currentState).addCivConstruction(constructionBlock);
+                } else {
+                    states.get(currentState).addMilConstruction(constructionBlock);
+                }
             }
             currentState++;
         }

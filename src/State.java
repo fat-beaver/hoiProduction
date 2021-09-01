@@ -62,6 +62,7 @@ public class State {
         if (currentCivProduction >= CIVILIAN_FACTORY_COST) {
             currentCivProduction = 0;
             civFactories +=1;
+            civUnderConstruction = false;
         }
     }
     public void addMilConstruction(double productionToAdd) {
