@@ -34,7 +34,6 @@ public class State {
     private int buildingSlots;
     private int milFactories;
     private int civFactories;
-    private int civTechLevel = 0;
 
     private boolean civUnderConstruction;
     private double currentCivProduction;
@@ -49,10 +48,9 @@ public class State {
         baseDockyards = newDockyards;
         civFactories = newCivFactories;
     }
-    public void upCivTechLevel() {
+    public void changeBuildingSlotsBonus(double newBonus) {
         //increase the concentrated/dispersed industry tech for building slots
-        civTechLevel++;
-        buildingSlots = (int) (baseBuildingSlots * Math.pow(1.2, civTechLevel));
+        buildingSlots = (int) (baseBuildingSlots * (1 + newBonus));
     }
     public int getMilFactories() {
         return milFactories;

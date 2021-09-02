@@ -28,14 +28,22 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
-    //CONSTANTS
+    //general constants
     private static final double PRODUCTION_PER_CIV_FACTORY = 5;
     private static final double PRODUCTION_PER_MIL_FACTORY = 2.25; //half the actual value, approximates production efficiency
     private static final int MAXIMUM_CIV_FACTORIES_PER_PROJECT = 15;
     private static final int MAXIMUM_INFRASTRUCTURE_LEVEL = 10;
     private static final String GAME_DATA_FILE = "stateInformationProcessed.csv";
     private final static double CONSUMER_GOODS_AMOUNT = 0.35;
-    private final static double ECONOMY_LAW_CONSTRUCTION = 0.3;
+    private final static double ECONOMY_LAW_CONSTRUCTION = - 0.3;
+    //research constants
+    private final static int[] CONSTRUCTION_TECHNOLOGY_INCREASES = {0, 365, 1095, 1825, 2555}; //days after 1936 for each
+    private final static int[] INDUSTRY_TECHNOLOGY_INCREASES = {170, 365, 1095, 1825, 2555}; //of the technologies
+    private final static int CONSTRUCTION_TECHNOLOGY_RESEARCH_TIME = 170; //days to research each construction tech
+    private final static int INDUSTRY_TECHNOLOGY_RESEARCH_TIME = 170; //days to research each industry tech
+    private final static double CONSTRUCTION_TECHNOLOGY_INCREMENT = 0.1;
+    private final static double INDUSTRY_TECHNOLOGY_SLOT_INCREMENT = 0.2;
+    private final static double INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT = 0.15;
 
     //INPUTS
     private static final String testNationName = "Soviet Union";
@@ -48,6 +56,10 @@ public class Main {
     //states storage
     private State[] states;
 
+    //tech progressions
+    private int constructionTechLevel = 0;
+    private int industryTechLevel = 0;
+
     private Main() {
         //TODO replace with an actual input of the name instead of taking a value in the code
         String nationName = testNationName;
@@ -56,9 +68,11 @@ public class Main {
         //initial values for comparison
         int startingMilFactories = countMilFactories();
         int startingCivFactories = countCivFactories();
-        //do the actual processing
-        for (int i = 0; i < testWarDays; i++) {
-            dayLoop(i);
+        for (int currentDay = 0; currentDay < testWarDays; currentDay++) {
+            //check for technology advancement
+            checkTechProgress(currentDay);
+            //do the actual processing
+            dayLoop(currentDay);
         }
         //print out some basic information for comparison
         System.out.println("Start Military Factories:  " + startingMilFactories);
@@ -67,13 +81,16 @@ public class Main {
         System.out.println("Total Military Production: " + totalMilProduction);
         System.out.println("Total Military Factories:  " + countMilFactories());
         System.out.println("Total Civilian Factories:  " + countCivFactories());
+        System.out.println("========");
+        System.out.println("Construction Technology Level: " + constructionTechLevel);
+        System.out.println("Industry Technology Level: " + industryTechLevel);
     }
     private void dayLoop(int currentDay) {
-        //add the military production for the day to the total
+        //add the military production for the dZay to the total
         //TODO implement proper production efficiency
-        totalMilProduction += countMilFactories() * PRODUCTION_PER_MIL_FACTORY;
+        double milProductionMultiplier = 1 + INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT * industryTechLevel;
+        totalMilProduction += (countMilFactories() * PRODUCTION_PER_MIL_FACTORY * milProductionMultiplier);
         //calculate how much construction to do
-        //TODO account for various buffs and de-buffs
         int effectiveCivFactories = (int) (countCivFactories() - (CONSUMER_GOODS_AMOUNT * (countCivFactories() + countMilFactories())));
         double constructionPoints = effectiveCivFactories * PRODUCTION_PER_CIV_FACTORY;
         //go through the list of states and assign the maximum number of factories to each construction until run out
@@ -83,7 +100,8 @@ public class Main {
                 double constructionBlock = Math.min(constructionPoints, MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
                 constructionPoints -= constructionBlock;
                 //account for construction speed from economy law
-                constructionBlock *= (1 - ECONOMY_LAW_CONSTRUCTION);
+                constructionBlock *= (1 + ECONOMY_LAW_CONSTRUCTION);
+                constructionBlock *= (1 + ECONOMY_LAW_CONSTRUCTION + (CONSTRUCTION_TECHNOLOGY_INCREMENT * constructionTechLevel));
                 //choose whether to build civ or mil factories after calculating the size of the construction block
                 if (currentDay < testCutoffDay || states[currentState].isCivUnderConstruction()) {
                     states[currentState].addCivConstruction(constructionBlock);
@@ -93,6 +111,23 @@ public class Main {
             }
             //move on to the next state
             currentState++;
+        }
+    }
+    private void checkTechProgress(int currentDay) {
+        //check for construction tech increases
+        for (int techIncreaseDay : CONSTRUCTION_TECHNOLOGY_INCREASES) {
+            if (currentDay == (techIncreaseDay + CONSTRUCTION_TECHNOLOGY_RESEARCH_TIME)) {
+                constructionTechLevel++;
+            }
+        }
+        //check for industry tech increases
+        for (int techIncreaseDay : INDUSTRY_TECHNOLOGY_INCREASES) {
+            if (currentDay == (techIncreaseDay + INDUSTRY_TECHNOLOGY_RESEARCH_TIME)) {
+                industryTechLevel++;
+                for (State state : states) {
+                    state.changeBuildingSlotsBonus(INDUSTRY_TECHNOLOGY_SLOT_INCREMENT * industryTechLevel);
+                }
+            }
         }
     }
     private int countCivFactories() {
