@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+import java.util.ArrayList;
+
 public class State {
     //CONSTANTS
     private static final int MILITARY_FACTORY_COST = 7200;
@@ -32,34 +34,49 @@ public class State {
     private final int baseDockyards; //Only recorded because they take up slots that cannot be used by factories.
     //current info
     private int buildingSlots;
-    private int milFactories;
+    private final ArrayList<MilFactory> milFactories;
     private int civFactories;
-
+    //construction info
     private boolean civUnderConstruction;
-    private double currentCivProduction;
+    private double currentCivConstruction;
     private boolean milUnderConstruction;
-    private double currentMilProduction;
+    private double currentMilConstruction;
 
-    public State(int newInfrastructure, int newBuildingSlots, int newMilFactories, int newDockyards, int newCivFactories) {
-        baseInfrastructure = newInfrastructure;
-        baseBuildingSlots = newBuildingSlots;
-        buildingSlots = newBuildingSlots;
-        milFactories = newMilFactories;
-        baseDockyards = newDockyards;
-        civFactories = newCivFactories;
+    public State(int infrastructure, int buildingSlots, int milFactories, int dockyards, int civFactories) {
+        baseInfrastructure = infrastructure;
+        baseBuildingSlots = buildingSlots;
+        this.buildingSlots = buildingSlots;
+        baseDockyards = dockyards;
+        this.civFactories = civFactories;
+        this.milFactories = new ArrayList<>();
+        for (int i = 0; i < milFactories; i++) {
+            this.milFactories.add(new MilFactory(true));
+        }
     }
-    public void changeBuildingSlotsBonus(double newBonus) {
+    public void setBuildingSlotsBonus(double newBonus) {
         //increase the concentrated/dispersed industry tech for building slots
         buildingSlots = (int) (baseBuildingSlots * (1 + newBonus));
     }
+    public void setProductionEfficiencyCap(double newCap) {
+        for (MilFactory milFactory : milFactories) {
+            milFactory.setProductionEfficiencyCap(newCap);
+        }
+    }
+    public double getMilProduction() {
+        double milProduction = 0;
+        for (MilFactory milFactory : milFactories) {
+            milProduction += milFactory.doProduction();
+        }
+        return milProduction;
+    }
     public int getMilFactories() {
-        return milFactories;
+        return milFactories.size();
     }
     public int getCivFactories() {
         return civFactories;
     }
     public int getFreeBuildingSlots() {
-        return buildingSlots - civFactories - milFactories - baseDockyards;
+        return buildingSlots - civFactories - milFactories.size() - baseDockyards;
     }
     public int getInfrastructureLevel() {
         return baseInfrastructure;
@@ -67,20 +84,17 @@ public class State {
     public boolean isCivUnderConstruction() {
         return civUnderConstruction;
     }
-    public boolean isMilUnderConstruction() {
-        return milUnderConstruction;
-    }
     public void addCivConstruction(double productionToAdd) {
         //add the given amount of production to factory construction progress and add a factory if required
         productionToAdd *= (1 + baseInfrastructure * 0.1);
         if (civUnderConstruction) {
-            currentCivProduction += productionToAdd;
+            currentCivConstruction += productionToAdd;
         } else {
             civUnderConstruction = true;
-            currentCivProduction = productionToAdd;
+            currentCivConstruction = productionToAdd;
         }
-        if (currentCivProduction >= CIVILIAN_FACTORY_COST) {
-            currentCivProduction = 0;
+        if (currentCivConstruction >= CIVILIAN_FACTORY_COST) {
+            currentCivConstruction = 0;
             civFactories +=1;
             civUnderConstruction = false;
         }
@@ -89,14 +103,14 @@ public class State {
         //add the given amount of production to factory construction progress and add a factory if required
         productionToAdd *= (1 + baseInfrastructure * 0.1);
         if (milUnderConstruction) {
-            currentMilProduction += productionToAdd;
+            currentMilConstruction += productionToAdd;
         } else {
             milUnderConstruction = true;
-            currentMilProduction = productionToAdd;
+            currentMilConstruction = productionToAdd;
         }
-        if (currentMilProduction >= MILITARY_FACTORY_COST) {
-            currentMilProduction = 0;
-            milFactories +=1;
+        if (currentMilConstruction >= MILITARY_FACTORY_COST) {
+            currentMilConstruction = 0;
+            milFactories.add(new MilFactory(false));
             milUnderConstruction = false;
         }
     }

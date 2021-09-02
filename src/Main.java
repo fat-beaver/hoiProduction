@@ -30,7 +30,7 @@ import java.util.Scanner;
 public class Main {
     //general constants
     private static final double PRODUCTION_PER_CIV_FACTORY = 5;
-    private static final double PRODUCTION_PER_MIL_FACTORY = 2.25; //half the actual value, approximates production efficiency
+    //half the actual value, approximates production efficiency
     private static final int MAXIMUM_CIV_FACTORIES_PER_PROJECT = 15;
     private static final int MAXIMUM_INFRASTRUCTURE_LEVEL = 10;
     private static final String GAME_DATA_FILE = "stateInformationProcessed.csv";
@@ -39,11 +39,15 @@ public class Main {
     //research constants
     private final static int[] CONSTRUCTION_TECHNOLOGY_INCREASES = {0, 365, 1095, 1825, 2555}; //days after 1936 for each
     private final static int[] INDUSTRY_TECHNOLOGY_INCREASES = {170, 365, 1095, 1825, 2555}; //of the technologies
+    private final static int[] TOOLS_TECHNOLOGY_INCREASES = {0, 365, 1095, 1825, 2555};
     private final static int CONSTRUCTION_TECHNOLOGY_RESEARCH_TIME = 170; //days to research each construction tech
     private final static int INDUSTRY_TECHNOLOGY_RESEARCH_TIME = 170; //days to research each industry tech
+    private final static int TOOLS_TECHNOLOGY_RESEARCH_TIME = 127;
     private final static double CONSTRUCTION_TECHNOLOGY_INCREMENT = 0.1;
     private final static double INDUSTRY_TECHNOLOGY_SLOT_INCREMENT = 0.2;
     private final static double INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT = 0.15;
+    //TODO implement the last bonus of the tools technology which improves efficiency growth
+    private final static double TOOLS_TECHNOLOGY_CAP_INCREMENT = 0.1;
 
     //INPUTS
     private static final String testNationName = "Soviet Union";
@@ -59,6 +63,7 @@ public class Main {
     //tech progressions
     private int constructionTechLevel = 0;
     private int industryTechLevel = 0;
+    private int toolsTechLevel = 0;
 
     private Main() {
         //TODO replace with an actual input of the name instead of taking a value in the code
@@ -89,7 +94,9 @@ public class Main {
         //add the military production for the dZay to the total
         //TODO implement proper production efficiency
         double milProductionMultiplier = 1 + INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT * industryTechLevel;
-        totalMilProduction += (countMilFactories() * PRODUCTION_PER_MIL_FACTORY * milProductionMultiplier);
+        for (State state : states) {
+            totalMilProduction += (state.getMilProduction() * milProductionMultiplier);
+        }
         //calculate how much construction to do
         int effectiveCivFactories = (int) (countCivFactories() - (CONSUMER_GOODS_AMOUNT * (countCivFactories() + countMilFactories())));
         double constructionPoints = effectiveCivFactories * PRODUCTION_PER_CIV_FACTORY;
@@ -125,7 +132,16 @@ public class Main {
             if (currentDay == (techIncreaseDay + INDUSTRY_TECHNOLOGY_RESEARCH_TIME)) {
                 industryTechLevel++;
                 for (State state : states) {
-                    state.changeBuildingSlotsBonus(INDUSTRY_TECHNOLOGY_SLOT_INCREMENT * industryTechLevel);
+                    state.setBuildingSlotsBonus(INDUSTRY_TECHNOLOGY_SLOT_INCREMENT * industryTechLevel);
+                }
+            }
+        }
+        //check for tool tech increases
+        for (int techIncreaseDay : TOOLS_TECHNOLOGY_INCREASES) {
+            if (currentDay == (techIncreaseDay + TOOLS_TECHNOLOGY_RESEARCH_TIME)) {
+                toolsTechLevel++;
+                for (State state : states) {
+                    state.setProductionEfficiencyCap(TOOLS_TECHNOLOGY_CAP_INCREMENT * toolsTechLevel);
                 }
             }
         }
