@@ -92,7 +92,6 @@ public class Main {
     }
     private void dayLoop(int currentDay) {
         //add the military production for the dZay to the total
-        //TODO implement proper production efficiency
         double milProductionMultiplier = 1 + INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT * industryTechLevel;
         for (State state : states) {
             totalMilProduction += (state.getMilProduction() * milProductionMultiplier);
