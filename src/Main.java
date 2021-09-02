@@ -34,6 +34,8 @@ public class Main {
     private static final int MAXIMUM_CIV_FACTORIES_PER_PROJECT = 15;
     private static final int MAXIMUM_INFRASTRUCTURE_LEVEL = 10;
     private static final String GAME_DATA_FILE = "stateInformationProcessed.csv";
+    private final static double CONSUMER_GOODS_AMOUNT = 0.35;
+    private final static double ECONOMY_LAW_CONSTRUCTION = 0.3;
 
     //INPUTS
     private static final String testNationName = "Soviet Union";
@@ -72,13 +74,16 @@ public class Main {
         totalMilProduction += countMilFactories() * PRODUCTION_PER_MIL_FACTORY;
         //calculate how much construction to do
         //TODO account for various buffs and de-buffs
-        double constructionPoints = countCivFactories() * PRODUCTION_PER_CIV_FACTORY;
+        int effectiveCivFactories = (int) (countCivFactories() - (CONSUMER_GOODS_AMOUNT * (countCivFactories() + countMilFactories())));
+        double constructionPoints = effectiveCivFactories * PRODUCTION_PER_CIV_FACTORY;
         //go through the list of states and assign the maximum number of factories to each construction until run out
         int currentState = 0;
         while (constructionPoints > 0 && currentState != states.length) {
             if (states[currentState].getFreeBuildingSlots() != 0) {
                 double constructionBlock = Math.min(constructionPoints, MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
                 constructionPoints -= constructionBlock;
+                //account for construction speed from economy law
+                constructionBlock *= (1 - ECONOMY_LAW_CONSTRUCTION);
                 //choose whether to build civ or mil factories after calculating the size of the construction block
                 if (currentDay < testCutoffDay || states[currentState].isCivUnderConstruction()) {
                     states[currentState].addCivConstruction(constructionBlock);
