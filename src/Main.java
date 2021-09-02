@@ -35,7 +35,8 @@ public class Main {
     private static final int MAXIMUM_INFRASTRUCTURE_LEVEL = 10;
     private static final String GAME_DATA_FILE = "stateInformationProcessed.csv";
     private final static double CONSUMER_GOODS_AMOUNT = 0.35;
-    private final static double ECONOMY_LAW_CONSTRUCTION = - 0.3;
+    private final static double ECONOMY_LAW_CIV_CONSTRUCTION_BONUS = -0.3;
+    private final static double ECONOMY_LAW_MIL_CONSTRUCTION_BONUS = -0.3;
     //research constants
     private final static int[] CONSTRUCTION_TECHNOLOGY_INCREASES = {0, 365, 1095, 1825, 2555}; //days after 1936 for each
     private final static int[] INDUSTRY_TECHNOLOGY_INCREASES = {170, 365, 1095, 1825, 2555}; //of the technologies
@@ -105,13 +106,16 @@ public class Main {
             if (states[currentState].getFreeBuildingSlots() != 0) {
                 double constructionBlock = Math.min(constructionPoints, MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
                 constructionPoints -= constructionBlock;
-                //account for construction speed from economy law
-                constructionBlock *= (1 + ECONOMY_LAW_CONSTRUCTION);
-                constructionBlock *= (1 + ECONOMY_LAW_CONSTRUCTION + (CONSTRUCTION_TECHNOLOGY_INCREMENT * constructionTechLevel));
+                //account for construction speed bonus from technology
+                constructionBlock *= (1 + (CONSTRUCTION_TECHNOLOGY_INCREMENT * constructionTechLevel));
                 //choose whether to build civ or mil factories after calculating the size of the construction block
                 if (currentDay < testCutoffDay || states[currentState].isCivUnderConstruction()) {
+                    //use the civ construction bonus
+                    constructionBlock *= (1 + ECONOMY_LAW_CIV_CONSTRUCTION_BONUS);
                     states[currentState].addCivConstruction(constructionBlock);
                 } else {
+                    //use the mil construction bonus
+                    constructionBlock *= (1 + ECONOMY_LAW_MIL_CONSTRUCTION_BONUS);
                     states[currentState].addMilConstruction(constructionBlock);
                 }
             }
