@@ -86,9 +86,6 @@ public class Main {
         System.out.println("Total Military Production: " + totalMilProduction);
         System.out.println("Total Military Factories:  " + countMilFactories());
         System.out.println("Total Civilian Factories:  " + countCivFactories());
-        System.out.println("========");
-        System.out.println("Construction Technology Level: " + constructionTechLevel);
-        System.out.println("Industry Technology Level: " + industryTechLevel);
     }
     private void dayLoop(int currentDay) {
         //add the military production for the dZay to the total
