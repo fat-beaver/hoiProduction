@@ -40,14 +40,16 @@ public class Main {
     private final static int[] CONSTRUCTION_TECHNOLOGY_INCREASES = {0, 365, 1095, 1825, 2555}; //days after 1936 for each
     private final static int[] INDUSTRY_TECHNOLOGY_INCREASES = {170, 365, 1095, 1825, 2555}; //of the technologies
     private final static int[] TOOLS_TECHNOLOGY_INCREASES = {0, 365, 1095, 1825, 2555};
+    private final static int[] TOOLS_SPECIAL_INCREASES = {2555};
     private final static int CONSTRUCTION_TECHNOLOGY_RESEARCH_TIME = 170; //days to research each construction tech
     private final static int INDUSTRY_TECHNOLOGY_RESEARCH_TIME = 170; //days to research each industry tech
     private final static int TOOLS_TECHNOLOGY_RESEARCH_TIME = 127;
+    private final static int TOOLS_SPECIAL_RESEARCH_TIME = 127;
     private final static double CONSTRUCTION_TECHNOLOGY_INCREMENT = 0.1;
     private final static double INDUSTRY_TECHNOLOGY_SLOT_INCREMENT = 0.2;
     private final static double INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT = 0.15;
-    //TODO implement the last bonus of the tools technology which improves efficiency growth
     private final static double TOOLS_TECHNOLOGY_CAP_INCREMENT = 0.1;
+    private final static double TOOLS_SPECIAL_GAIN_INCREMENT = 0.1;
 
     //INPUTS
     private static final String testNationName = "Soviet Union";
@@ -64,6 +66,7 @@ public class Main {
     private int constructionTechLevel = 0;
     private int industryTechLevel = 0;
     private int toolsTechLevel = 0;
+    private int toolsSpecialLevel = 0;
 
     private Main() {
         //TODO replace with an actual input of the name instead of taking a value in the code
@@ -138,7 +141,15 @@ public class Main {
             if (currentDay == (techIncreaseDay + TOOLS_TECHNOLOGY_RESEARCH_TIME)) {
                 toolsTechLevel++;
                 for (State state : states) {
-                    state.setProductionEfficiencyCap(TOOLS_TECHNOLOGY_CAP_INCREMENT * toolsTechLevel);
+                    state.setProductionEfficiencyCapBonus(TOOLS_TECHNOLOGY_CAP_INCREMENT * toolsTechLevel);
+                }
+            }
+        }
+        for (int techIncreaseDay : TOOLS_SPECIAL_INCREASES) {
+            if (currentDay == (techIncreaseDay + TOOLS_SPECIAL_RESEARCH_TIME)) {
+                toolsSpecialLevel++;
+                for (State state : states) {
+                    state.setProductionEfficiencyGainBonus(TOOLS_SPECIAL_GAIN_INCREMENT * toolsSpecialLevel);
                 }
             }
         }

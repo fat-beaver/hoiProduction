@@ -57,9 +57,14 @@ public class State {
         //increase the concentrated/dispersed industry tech for building slots
         buildingSlots = (int) (baseBuildingSlots * (1 + newBonus));
     }
-    public void setProductionEfficiencyCap(double newCap) {
+    public void setProductionEfficiencyCapBonus(double capBonus) {
         for (MilFactory milFactory : milFactories) {
-            milFactory.setProductionEfficiencyCap(newCap);
+            milFactory.setProductionEfficiencyCapBonus(capBonus);
+        }
+    }
+    public void setProductionEfficiencyGainBonus(double gainBonus) {
+        for (MilFactory milFactory : milFactories) {
+            milFactory.setProductionEfficiencyGainBonus(gainBonus);
         }
     }
     public double getMilProduction() {
