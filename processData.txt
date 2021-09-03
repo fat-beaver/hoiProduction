@@ -1,1 +1,1 @@
-cat stateInformation.csv | sed 's/".*"//g' | sed 's/ //g' | sed 's/,,/,0,/g' | sed 's/,,/,0,/g' | sed 's/,/, /g' | awk '{print $5, $10, $12, $13, $14, $15}' | sed 's/ //g' | sed -z 's/,\n/\n/g' > stateInformationProcessed.csv
+cat stateInformation.csv | sed 's/".*"//g' | sed 's/ //g' | sed 's/,,/,0,/g' | sed 's/,,/,0,/g' | sed 's/,/, /g' | awk '{print $3, $5, $10, $12, $13, $14, $15}' | sed 's/ //g' | sed -z 's/,\n/\n/g' > stateInformationProcessed.csv

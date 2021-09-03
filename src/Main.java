@@ -30,7 +30,6 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.Scanner;
 
 public class Main {
@@ -43,9 +42,9 @@ public class Main {
         String countryName = "";
         Scanner keyboardInput = new Scanner(System.in);
         do {
-            System.out.println("Please enter a *full* country name (e.g. dominion of canada)");
+            System.out.println("Please enter a *full* country name (e.g. dominion of canada) OR a country code (e.g. CAN");
             String nameInput = keyboardInput.nextLine();
-            states = loadDataFile(nameInput.replaceAll(" ", "").toLowerCase(Locale.ROOT));
+            states = loadDataFile(nameInput.replaceAll(" ", "").toLowerCase());
             if (states.length == 0) {
                 System.out.println("Invalid name");
             } else {
@@ -147,12 +146,12 @@ public class Main {
             while (nationDataReader.hasNextLine() && !reachedEnd) {
                 String readLine = nationDataReader.nextLine();
                 String[] stateInfo = readLine.split(",");
-                if (stateInfo[0].toLowerCase(Locale.ROOT).equals(nationName)) {
-                    int infrastructure = Integer.parseInt(stateInfo[1]);
-                    int buildingSlots= Integer.parseInt(stateInfo[2]);
-                    int milFactories = Integer.parseInt(stateInfo[3]);
-                    int dockyards = Integer.parseInt(stateInfo[4]);
-                    int civFactories = Integer.parseInt(stateInfo[5]);
+                if (stateInfo[1].toLowerCase().equals(nationName) || stateInfo[0].toLowerCase().equals(nationName)) {
+                    int infrastructure = Integer.parseInt(stateInfo[2]);
+                    int buildingSlots= Integer.parseInt(stateInfo[3]);
+                    int milFactories = Integer.parseInt(stateInfo[4]);
+                    int dockyards = Integer.parseInt(stateInfo[5]);
+                    int civFactories = Integer.parseInt(stateInfo[6]);
                     initialStates.add(new State(infrastructure, buildingSlots, milFactories, dockyards, civFactories));
                 }
                 if (stateInfo[0].equals("0")) {
