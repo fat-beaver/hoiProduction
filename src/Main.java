@@ -29,12 +29,19 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
     //data file location
     private static final String GAME_DATA_FILE = "stateInformationProcessed.csv";
+
+    //the date the game starts at
+    private static final String GAME_START_DATE = "01-01-1936";
 
     private Main() {
         //ask the user which nation they want to calculate for
@@ -52,19 +59,25 @@ public class Main {
             }
         } while (states.length == 0);
         //ask the user what point they want to reach maximum production at (generally the start of the war)
-        Integer duration = null;
+        int duration = 0;
+        String rawDate = null;
         do {
             try {
-                System.out.println("Please enter the number of days that you want to simulation for, this is generally the time from game start to when you want to go to war");
-                duration = Integer.parseInt(keyboardInput.nextLine());
-                if (duration <= 0) {
-                    duration = null;
+                System.out.println("Please the date to end at in the format DD-MM-YYYY (e.g. 22-06-1941)");
+                rawDate = keyboardInput.nextLine();
+                SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+                Date gameStart = dateFormat.parse(GAME_START_DATE);
+                Date endDate = dateFormat.parse(rawDate);
+                long durationMilli = endDate.getTime() - gameStart.getTime();
+                duration = (int) TimeUnit.DAYS.convert(durationMilli, TimeUnit.MILLISECONDS);
+                if (duration < 0) {
+                    duration = 0;
                 }
-            } catch (NumberFormatException e) {
-                System.out.println("invalid value");
+            } catch (NumberFormatException | ParseException e) {
+                System.out.println("invalid date");
             }
 
-        } while (duration == null);
+        } while (duration == 0);
 
         //create an array to keep track of the instance that cuts off at each day.
         Country[] countryInstances = new Country[duration];
@@ -87,7 +100,7 @@ public class Main {
             productionData[i] = countryInstances[i].getMilProduction();
             civFactoryData[i] = countryInstances[i].countCivFactories();
             milFactoryData[i] = countryInstances[i].countMilFactories();
-            xAxisData[i] = i;
+            xAxisData[i] = ((double) i )/ 365;
         }
         //create a window for the graphs to go in and set some basic properties
         JFrame outputWindow = new JFrame();
@@ -100,24 +113,24 @@ public class Main {
         outputWindow.add(contentPanel);
         //create all three graphs and set the required information
         XYChart productionGraph = new XYChart(1, 1);
-        productionGraph.setTitle("Total Military Production over " + duration + " days for " + countryName);
-        productionGraph.setXAxisTitle("Day switched from civilian to military factories");
-        productionGraph.setYAxisTitle("Total military production over " + duration + " days");
-        productionGraph.addSeries("Total military production over " + duration + " days", xAxisData, productionData);
+        productionGraph.setTitle("Total military production from " + GAME_START_DATE + " to " + rawDate + " (" + duration + " days) for " + countryName);
+        productionGraph.setXAxisTitle("Time switched from civilian to military factories (years after game start)");
+        productionGraph.setYAxisTitle("Total military production");
+        productionGraph.addSeries("Total military production", xAxisData, productionData);
         contentPanel.add(new XChartPanel<>(productionGraph), 0);
 
         XYChart civFactoryGraph = new XYChart(1, 1);
-        civFactoryGraph.setTitle("Total Civilian Factories after " + duration + " days for " + countryName);
-        civFactoryGraph.setXAxisTitle("Day switched from civilian to military factories");
-        civFactoryGraph.setYAxisTitle("Civilian factories after " + duration + " days");
-        civFactoryGraph.addSeries("Civilian factories after " + duration + " days", xAxisData, civFactoryData);
+        civFactoryGraph.setTitle("Total Civilian Factories on " + rawDate + " (after " + duration + " days) for " + countryName);
+        civFactoryGraph.setXAxisTitle("Time switched from civilian to military factories (years after game start)");
+        civFactoryGraph.setYAxisTitle("Civilian factories");
+        civFactoryGraph.addSeries("Civilian factories", xAxisData, civFactoryData);
         contentPanel.add(new XChartPanel<>(civFactoryGraph), 1);
 
         XYChart milFactoryGraph = new XYChart(1, 1);
-        milFactoryGraph.setTitle("Total Military Factories after " + duration + " days for " + countryName);
-        milFactoryGraph.setXAxisTitle("Day switched from civilian to military factories");
-        milFactoryGraph.setYAxisTitle("Military factories after " + duration + " days");
-        milFactoryGraph.addSeries("Military factories after " + duration + " days", xAxisData, milFactoryData);
+        milFactoryGraph.setTitle("Total Military Factories on " + rawDate + " (after " + duration + " days) for " + countryName);
+        milFactoryGraph.setXAxisTitle("Time switched from civilian to military factories (years after game start)");
+        milFactoryGraph.setYAxisTitle("Military factories");
+        milFactoryGraph.addSeries("Military factories", xAxisData, milFactoryData);
         contentPanel.add(new XChartPanel<>(milFactoryGraph), 2);
 
         //show the window once everything has been added
