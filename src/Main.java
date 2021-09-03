@@ -49,7 +49,7 @@ public class Main {
         String countryName = "";
         Scanner keyboardInput = new Scanner(System.in);
         do {
-            System.out.println("Please enter a *full* country name (e.g. dominion of canada) OR a country code (e.g. CAN");
+            System.out.println("Please enter a country code (e.g. CAN) OR a *full* country name (e.g. dominion of canada)");
             String nameInput = keyboardInput.nextLine();
             states = loadDataFile(nameInput.replaceAll(" ", "").toLowerCase());
             if (states.length == 0) {
@@ -63,7 +63,7 @@ public class Main {
         String rawDate = null;
         do {
             try {
-                System.out.println("Please the date to end at in the format DD-MM-YYYY (e.g. 22-06-1941)");
+                System.out.println("Please enter the date to end at in the format DD-MM-YYYY (e.g. 22-06-1941)");
                 rawDate = keyboardInput.nextLine();
                 SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
                 Date gameStart = dateFormat.parse(GAME_START_DATE);
@@ -160,7 +160,7 @@ public class Main {
             while (nationDataReader.hasNextLine() && !reachedEnd) {
                 String readLine = nationDataReader.nextLine();
                 String[] stateInfo = readLine.split(",");
-                if (stateInfo[1].toLowerCase().equals(nationName) || stateInfo[0].toLowerCase().equals(nationName)) {
+                if (stateInfo[0].toLowerCase().equals(nationName) || stateInfo[1].toLowerCase().equals(nationName)) {
                     int infrastructure = Integer.parseInt(stateInfo[2]);
                     int buildingSlots= Integer.parseInt(stateInfo[3]);
                     int milFactories = Integer.parseInt(stateInfo[4]);
