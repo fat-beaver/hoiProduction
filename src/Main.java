@@ -22,158 +22,99 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+import org.knowm.xchart.XChartPanel;
+import org.knowm.xchart.XYChart;
+
+import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
-    //general constants
-    private static final double PRODUCTION_PER_CIV_FACTORY = 5;
-    //half the actual value, approximates production efficiency
-    private static final int MAXIMUM_CIV_FACTORIES_PER_PROJECT = 15;
-    private static final int MAXIMUM_INFRASTRUCTURE_LEVEL = 10;
+    //data file location
     private static final String GAME_DATA_FILE = "stateInformationProcessed.csv";
-    private final static double CONSUMER_GOODS_AMOUNT = 0.35;
-    private final static double ECONOMY_LAW_CIV_CONSTRUCTION_BONUS = -0.3;
-    private final static double ECONOMY_LAW_MIL_CONSTRUCTION_BONUS = -0.3;
-    //research constants
-    private final static int[] CONSTRUCTION_TECHNOLOGY_INCREASES = {0, 365, 1095, 1825, 2555}; //days after 1936 for each
-    private final static int[] INDUSTRY_TECHNOLOGY_INCREASES = {170, 365, 1095, 1825, 2555}; //of the technologies
-    private final static int[] TOOLS_TECHNOLOGY_INCREASES = {0, 365, 1095, 1825, 2555};
-    private final static int[] TOOLS_SPECIAL_INCREASES = {2555};
-    private final static int CONSTRUCTION_TECHNOLOGY_RESEARCH_TIME = 170; //days to research each construction tech
-    private final static int INDUSTRY_TECHNOLOGY_RESEARCH_TIME = 170; //days to research each industry tech
-    private final static int TOOLS_TECHNOLOGY_RESEARCH_TIME = 127;
-    private final static int TOOLS_SPECIAL_RESEARCH_TIME = 127;
-    private final static double CONSTRUCTION_TECHNOLOGY_INCREMENT = 0.1;
-    private final static double INDUSTRY_TECHNOLOGY_SLOT_INCREMENT = 0.2;
-    private final static double INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT = 0.15;
-    private final static double TOOLS_TECHNOLOGY_CAP_INCREMENT = 0.1;
-    private final static double TOOLS_SPECIAL_GAIN_INCREMENT = 0.1;
 
     //INPUTS
-    private static final String testNationName = "Soviet Union";
-    private static final int testWarDays = 1999; //days from the beginning of 1936 to barbarossa
-    private static final int testCutoffDay = 0;
+    //TODO replace with actual inputs instead of taking values in the code
+    private static final String testCountryName = "Soviet Union";
+    private static final int warDay = 1999; //calculateResults of 1936 to calculateResults of barbarossa
 
-    //running total
-    private double totalMilProduction = 0;
-
-    //states storage
-    private State[] states;
-
-    //tech progressions
-    private int constructionTechLevel = 0;
-    private int industryTechLevel = 0;
-    private int toolsTechLevel = 0;
-    private int toolsSpecialLevel = 0;
 
     private Main() {
-        //TODO replace with an actual input of the name instead of taking a value in the code
-        String nationName = testNationName;
-        nationName = nationName.replaceAll(" ", "");
-        loadNation(nationName);
-        //initial values for comparison
-        int startingMilFactories = countMilFactories();
-        int startingCivFactories = countCivFactories();
-        for (int currentDay = 0; currentDay < testWarDays; currentDay++) {
-            //check for technology advancement
-            checkTechProgress(currentDay);
-            //do the actual processing
-            dayLoop(currentDay);
+        //load the country that the user specified from the data file
+        String countryName = testCountryName;
+        countryName = countryName.replaceAll(" ", "");
+        State[] states = loadNation(countryName);
+        //create an array to keep track of the instance that cuts off at each day.
+        Country[] countryInstances = new Country[warDay];
+        for (int cutoffDay = 0; cutoffDay < warDay; cutoffDay++) {
+            countryInstances[cutoffDay] = new Country(warDay, cutoffDay, duplicateStateList(states));
         }
-        //print out some basic information for comparison
-        System.out.println("Start Military Factories:  " + startingMilFactories);
-        System.out.println("Start Civilian Factories:  " + startingCivFactories);
-        System.out.println("========");
-        System.out.println("Total Military Production: " + totalMilProduction);
-        System.out.println("Total Military Factories:  " + countMilFactories());
-        System.out.println("Total Civilian Factories:  " + countCivFactories());
+
+        System.out.println("all country instances created... processing now");
+        //tell each instance to do the require processing, this may need to be changed to process in parallel for performance
+        for (Country countryInstance : countryInstances) {
+            countryInstance.calculateResults();
+        }
+        System.out.println("all country results calculated... graphing now");
+        //gather all of the data to graph it
+        double[] productionData = new double[warDay];
+        double[] civFactoryData = new double[warDay];
+        double[] milFactoryData = new double[warDay];
+        double[] xAxisData = new double[warDay];
+        for (int i = 0; i < countryInstances.length; i++) {
+            productionData[i] = countryInstances[i].getMilProduction();
+            civFactoryData[i] = countryInstances[i].countCivFactories();
+            milFactoryData[i] = countryInstances[i].countMilFactories();
+            xAxisData[i] = i;
+        }
+        //create a window for the graphs to go in and set some basic properties
+        JFrame outputWindow = new JFrame();
+        outputWindow.setTitle("Simulation Results");
+        outputWindow.setPreferredSize(new Dimension(900, 900));
+        outputWindow.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        //create a JPanel to hold all of the graphs.
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new GridLayout(3, 1));
+        outputWindow.add(contentPanel);
+        //create all three graphs and set the required information
+        XYChart productionGraph = new XYChart(1, 1);
+        productionGraph.setTitle("Total Military Production over " + warDay + " days");
+        productionGraph.setXAxisTitle("Day switched from civilian to military factories");
+        productionGraph.setYAxisTitle("Total military production over " + warDay + " days");
+        productionGraph.addSeries("Total military production over " + warDay + " days", xAxisData, productionData);
+        contentPanel.add(new XChartPanel<>(productionGraph), 0);
+
+        XYChart civFactoryGraph = new XYChart(1, 1);
+        civFactoryGraph.setTitle("Total Civilian Factories after " + warDay + " days");
+        civFactoryGraph.setXAxisTitle("Day switched from civilian to military factories");
+        civFactoryGraph.setYAxisTitle("Civilian factories after " + warDay + " days");
+        civFactoryGraph.addSeries("Civilian factories after " + warDay + " days", xAxisData, civFactoryData);
+        contentPanel.add(new XChartPanel<>(civFactoryGraph), 1);
+
+        XYChart milFactoryGraph = new XYChart(1, 1);
+        milFactoryGraph.setTitle("Total Military Factories after " + warDay + " days");
+        milFactoryGraph.setXAxisTitle("Day switched from civilian to military factories");
+        milFactoryGraph.setYAxisTitle("Military factories after " + warDay + " days");
+        milFactoryGraph.addSeries("Military factories after " + warDay + " days", xAxisData, milFactoryData);
+        contentPanel.add(new XChartPanel<>(milFactoryGraph), 2);
+
+        //show the window once everything has been added
+        outputWindow.pack();
+        outputWindow.toFront();
+        outputWindow.setVisible(true);
     }
-    private void dayLoop(int currentDay) {
-        //add the military production for the dZay to the total
-        double milProductionMultiplier = 1 + INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT * industryTechLevel;
-        for (State state : states) {
-            totalMilProduction += (state.getMilProduction() * milProductionMultiplier);
+    private State[] duplicateStateList(State[] original) {
+        State[] newStateList = new State[original.length];
+        for (int i = 0; i < original.length; i++) {
+
+            newStateList[i] = new State(original[i].getInfrastructureLevel(), original[i].getBuildingSlots(), original[i].getMilFactories(), original[i].getDockyards(), original[i].getCivFactories());
         }
-        //calculate how much construction to do
-        int effectiveCivFactories = (int) (countCivFactories() - (CONSUMER_GOODS_AMOUNT * (countCivFactories() + countMilFactories())));
-        double constructionPoints = effectiveCivFactories * PRODUCTION_PER_CIV_FACTORY;
-        //go through the list of states and assign the maximum number of factories to each construction until run out
-        int currentState = 0;
-        while (constructionPoints > 0 && currentState != states.length) {
-            if (states[currentState].getFreeBuildingSlots() != 0) {
-                double constructionBlock = Math.min(constructionPoints, MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
-                constructionPoints -= constructionBlock;
-                //account for construction speed bonus from technology
-                constructionBlock *= (1 + (CONSTRUCTION_TECHNOLOGY_INCREMENT * constructionTechLevel));
-                //choose whether to build civ or mil factories after calculating the size of the construction block
-                if (currentDay < testCutoffDay || states[currentState].isCivUnderConstruction()) {
-                    //use the civ construction bonus
-                    constructionBlock *= (1 + ECONOMY_LAW_CIV_CONSTRUCTION_BONUS);
-                    states[currentState].addCivConstruction(constructionBlock);
-                } else {
-                    //use the mil construction bonus
-                    constructionBlock *= (1 + ECONOMY_LAW_MIL_CONSTRUCTION_BONUS);
-                    states[currentState].addMilConstruction(constructionBlock);
-                }
-            }
-            //move on to the next state
-            currentState++;
-        }
+        return newStateList;
     }
-    private void checkTechProgress(int currentDay) {
-        //check for construction tech increases
-        for (int techIncreaseDay : CONSTRUCTION_TECHNOLOGY_INCREASES) {
-            if (currentDay == (techIncreaseDay + CONSTRUCTION_TECHNOLOGY_RESEARCH_TIME)) {
-                constructionTechLevel++;
-            }
-        }
-        //check for industry tech increases
-        for (int techIncreaseDay : INDUSTRY_TECHNOLOGY_INCREASES) {
-            if (currentDay == (techIncreaseDay + INDUSTRY_TECHNOLOGY_RESEARCH_TIME)) {
-                industryTechLevel++;
-                for (State state : states) {
-                    state.setBuildingSlotsBonus(INDUSTRY_TECHNOLOGY_SLOT_INCREMENT * industryTechLevel);
-                }
-            }
-        }
-        //check for tool tech increases
-        for (int techIncreaseDay : TOOLS_TECHNOLOGY_INCREASES) {
-            if (currentDay == (techIncreaseDay + TOOLS_TECHNOLOGY_RESEARCH_TIME)) {
-                toolsTechLevel++;
-                for (State state : states) {
-                    state.setProductionEfficiencyCapBonus(TOOLS_TECHNOLOGY_CAP_INCREMENT * toolsTechLevel);
-                }
-            }
-        }
-        for (int techIncreaseDay : TOOLS_SPECIAL_INCREASES) {
-            if (currentDay == (techIncreaseDay + TOOLS_SPECIAL_RESEARCH_TIME)) {
-                toolsSpecialLevel++;
-                for (State state : states) {
-                    state.setProductionEfficiencyGainBonus(TOOLS_SPECIAL_GAIN_INCREMENT * toolsSpecialLevel);
-                }
-            }
-        }
-    }
-    private int countCivFactories() {
-        int civFactories = 0;
-        //loop through the list of states to count how many civ factories the country has
-        for (State state : states) {
-            civFactories += state.getCivFactories();
-        }
-        return civFactories;
-    }
-    private int countMilFactories() {
-        int milFactories = 0;
-        //loop through the list of states to count how many mil factories the country has
-        for (State state : states) {
-            milFactories += state.getMilFactories();
-        }
-        return milFactories;
-    }
-    private void loadNation(String nationName) {
+    private State[] loadNation(String nationName) {
         //create a structure to hold all of the states before they get added to the simulation properly
         ArrayList<State> initialStates = new ArrayList<>();
         //read required state and country data from the included data file
@@ -203,19 +144,20 @@ public class Main {
         } catch (NumberFormatException e) {
             System.out.println("data file appears to have errors");
         }
-        //sort the states by infrastructure level and then add them to the main arraylist
-        int lastInfrastructureLevel = MAXIMUM_INFRASTRUCTURE_LEVEL;
-        states = new State[initialStates.size()];
-        int currentSlot = 0;
-        while (currentSlot < states.length) {
+        //sort the states by infrastructure level and then add them to the main array
+        State[] states = new State[initialStates.size()];
+        int lastInfrastructureLevel = 0;
+        int currentSlot = states.length - 1;
+        while (currentSlot >= 0) {
             for (State state : initialStates) {
                 if (state.getInfrastructureLevel() == lastInfrastructureLevel) {
                     states[currentSlot] = state;
-                    currentSlot++;
+                    currentSlot--;
                 }
             }
-            lastInfrastructureLevel--;
+            lastInfrastructureLevel++;
         }
+        return states;
     }
     public static void main(String[] args) {
         new Main();

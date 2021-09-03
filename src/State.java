@@ -119,4 +119,12 @@ public class State {
             milUnderConstruction = false;
         }
     }
+
+    public int getBuildingSlots() {
+        return buildingSlots;
+    }
+
+    public int getDockyards() {
+        return baseDockyards;
+    }
 }

@@ -5,3 +5,5 @@ A VERY WIP program to simulate the industrial parts of Hearts of Iron IV in orde
 Don't actually use this yet, it won't provide answers that make proper sense, but have a look around anyway.
 
 Uses state data from user "Mister Analyst" on the paradox forums [found here](https://forum.paradoxplaza.com/forum/threads/hoi4-resource-history-spreadsheet-updated-to-include-patch-1-10-3.1446256/)
+
+Requires the Xchart library to function, version 3.8.1 was used and can be acquired easily from maven.
