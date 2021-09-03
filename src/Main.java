@@ -34,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
@@ -86,10 +87,11 @@ public class Main {
         }
 
         System.out.println("all country instances created... processing now");
-        //tell each instance to do the require processing, this may need to be changed to process in parallel for performance
-        for (Country countryInstance : countryInstances) {
-            countryInstance.calculateResults();
-        }
+        //create a fork-join pool to split up the task of calculating what happens in each country instance
+        SimulationProcessor simProcessor = new SimulationProcessor(countryInstances, 0, countryInstances.length);
+        ForkJoinPool processingPool = new ForkJoinPool();
+        processingPool.invoke(simProcessor);
+
         System.out.println("all country results calculated... graphing now");
         //gather all of the data to graph it
         double[] productionData = new double[duration];
