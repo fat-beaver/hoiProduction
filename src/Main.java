@@ -30,27 +30,45 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Scanner;
 
 public class Main {
     //data file location
     private static final String GAME_DATA_FILE = "stateInformationProcessed.csv";
 
-    //INPUTS
-    //TODO replace with actual inputs instead of taking values in the code
-    private static final String testCountryName = "Soviet Union";
-    private static final int warDay = 1999; //calculateResults of 1936 to calculateResults of barbarossa
-
-
     private Main() {
-        //load the country that the user specified from the data file
-        String countryName = testCountryName;
-        countryName = countryName.replaceAll(" ", "");
-        State[] states = loadNation(countryName);
+        //ask the user which nation they want to calculate for
+        State[] states;
+        Scanner keyboardInput = new Scanner(System.in);
+        do {
+            System.out.println("Please enter a *full* country name (e.g. dominion of canada)");
+            String nameInput = keyboardInput.nextLine();
+            String countryName = nameInput.replaceAll(" ", "").toLowerCase(Locale.ROOT);
+            states = loadDataFile(countryName);
+            if (states.length == 0) {
+                System.out.println("Invalid name");
+            }
+        } while (states.length == 0);
+        //ask the user what point they want to reach maximum production at (generally the start of the war)
+        Integer duration = null;
+        do {
+            try {
+                System.out.println("Please enter the number of days that you want to simulation for, this is generally the time from game start to when you want to go to war");
+                duration = Integer.parseInt(keyboardInput.nextLine());
+                if (duration <= 0) {
+                    duration = null;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("invalid value");
+            }
+
+        } while (duration == null);
+
         //create an array to keep track of the instance that cuts off at each day.
-        Country[] countryInstances = new Country[warDay];
-        for (int cutoffDay = 0; cutoffDay < warDay; cutoffDay++) {
-            countryInstances[cutoffDay] = new Country(warDay, cutoffDay, duplicateStateList(states));
+        Country[] countryInstances = new Country[duration];
+        for (int cutoffDay = 0; cutoffDay < duration; cutoffDay++) {
+            countryInstances[cutoffDay] = new Country(duration, cutoffDay, duplicateStateList(states));
         }
 
         System.out.println("all country instances created... processing now");
@@ -60,10 +78,10 @@ public class Main {
         }
         System.out.println("all country results calculated... graphing now");
         //gather all of the data to graph it
-        double[] productionData = new double[warDay];
-        double[] civFactoryData = new double[warDay];
-        double[] milFactoryData = new double[warDay];
-        double[] xAxisData = new double[warDay];
+        double[] productionData = new double[duration];
+        double[] civFactoryData = new double[duration];
+        double[] milFactoryData = new double[duration];
+        double[] xAxisData = new double[duration];
         for (int i = 0; i < countryInstances.length; i++) {
             productionData[i] = countryInstances[i].getMilProduction();
             civFactoryData[i] = countryInstances[i].countCivFactories();
@@ -81,24 +99,24 @@ public class Main {
         outputWindow.add(contentPanel);
         //create all three graphs and set the required information
         XYChart productionGraph = new XYChart(1, 1);
-        productionGraph.setTitle("Total Military Production over " + warDay + " days");
+        productionGraph.setTitle("Total Military Production over " + duration + " days");
         productionGraph.setXAxisTitle("Day switched from civilian to military factories");
-        productionGraph.setYAxisTitle("Total military production over " + warDay + " days");
-        productionGraph.addSeries("Total military production over " + warDay + " days", xAxisData, productionData);
+        productionGraph.setYAxisTitle("Total military production over " + duration + " days");
+        productionGraph.addSeries("Total military production over " + duration + " days", xAxisData, productionData);
         contentPanel.add(new XChartPanel<>(productionGraph), 0);
 
         XYChart civFactoryGraph = new XYChart(1, 1);
-        civFactoryGraph.setTitle("Total Civilian Factories after " + warDay + " days");
+        civFactoryGraph.setTitle("Total Civilian Factories after " + duration + " days");
         civFactoryGraph.setXAxisTitle("Day switched from civilian to military factories");
-        civFactoryGraph.setYAxisTitle("Civilian factories after " + warDay + " days");
-        civFactoryGraph.addSeries("Civilian factories after " + warDay + " days", xAxisData, civFactoryData);
+        civFactoryGraph.setYAxisTitle("Civilian factories after " + duration + " days");
+        civFactoryGraph.addSeries("Civilian factories after " + duration + " days", xAxisData, civFactoryData);
         contentPanel.add(new XChartPanel<>(civFactoryGraph), 1);
 
         XYChart milFactoryGraph = new XYChart(1, 1);
-        milFactoryGraph.setTitle("Total Military Factories after " + warDay + " days");
+        milFactoryGraph.setTitle("Total Military Factories after " + duration + " days");
         milFactoryGraph.setXAxisTitle("Day switched from civilian to military factories");
-        milFactoryGraph.setYAxisTitle("Military factories after " + warDay + " days");
-        milFactoryGraph.addSeries("Military factories after " + warDay + " days", xAxisData, milFactoryData);
+        milFactoryGraph.setYAxisTitle("Military factories after " + duration + " days");
+        milFactoryGraph.addSeries("Military factories after " + duration + " days", xAxisData, milFactoryData);
         contentPanel.add(new XChartPanel<>(milFactoryGraph), 2);
 
         //show the window once everything has been added
@@ -114,7 +132,7 @@ public class Main {
         }
         return newStateList;
     }
-    private State[] loadNation(String nationName) {
+    private State[] loadDataFile(String nationName) {
         //create a structure to hold all of the states before they get added to the simulation properly
         ArrayList<State> initialStates = new ArrayList<>();
         //read required state and country data from the included data file
@@ -127,7 +145,7 @@ public class Main {
             while (nationDataReader.hasNextLine() && !reachedEnd) {
                 String readLine = nationDataReader.nextLine();
                 String[] stateInfo = readLine.split(",");
-                if (stateInfo[0].equals(nationName)) {
+                if (stateInfo[0].toLowerCase(Locale.ROOT).equals(nationName)) {
                     int infrastructure = Integer.parseInt(stateInfo[1]);
                     int buildingSlots= Integer.parseInt(stateInfo[2]);
                     int milFactories = Integer.parseInt(stateInfo[3]);
