@@ -40,14 +40,16 @@ public class Main {
     private Main() {
         //ask the user which nation they want to calculate for
         State[] states;
+        String countryName = "";
         Scanner keyboardInput = new Scanner(System.in);
         do {
             System.out.println("Please enter a *full* country name (e.g. dominion of canada)");
             String nameInput = keyboardInput.nextLine();
-            String countryName = nameInput.replaceAll(" ", "").toLowerCase(Locale.ROOT);
-            states = loadDataFile(countryName);
+            states = loadDataFile(nameInput.replaceAll(" ", "").toLowerCase(Locale.ROOT));
             if (states.length == 0) {
                 System.out.println("Invalid name");
+            } else {
+                countryName = nameInput;
             }
         } while (states.length == 0);
         //ask the user what point they want to reach maximum production at (generally the start of the war)
@@ -90,7 +92,7 @@ public class Main {
         }
         //create a window for the graphs to go in and set some basic properties
         JFrame outputWindow = new JFrame();
-        outputWindow.setTitle("Simulation Results");
+        outputWindow.setTitle("Simulation Results for " + countryName);
         outputWindow.setPreferredSize(new Dimension(900, 900));
         outputWindow.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         //create a JPanel to hold all of the graphs.
@@ -99,21 +101,21 @@ public class Main {
         outputWindow.add(contentPanel);
         //create all three graphs and set the required information
         XYChart productionGraph = new XYChart(1, 1);
-        productionGraph.setTitle("Total Military Production over " + duration + " days");
+        productionGraph.setTitle("Total Military Production over " + duration + " days for " + countryName);
         productionGraph.setXAxisTitle("Day switched from civilian to military factories");
         productionGraph.setYAxisTitle("Total military production over " + duration + " days");
         productionGraph.addSeries("Total military production over " + duration + " days", xAxisData, productionData);
         contentPanel.add(new XChartPanel<>(productionGraph), 0);
 
         XYChart civFactoryGraph = new XYChart(1, 1);
-        civFactoryGraph.setTitle("Total Civilian Factories after " + duration + " days");
+        civFactoryGraph.setTitle("Total Civilian Factories after " + duration + " days for " + countryName);
         civFactoryGraph.setXAxisTitle("Day switched from civilian to military factories");
         civFactoryGraph.setYAxisTitle("Civilian factories after " + duration + " days");
         civFactoryGraph.addSeries("Civilian factories after " + duration + " days", xAxisData, civFactoryData);
         contentPanel.add(new XChartPanel<>(civFactoryGraph), 1);
 
         XYChart milFactoryGraph = new XYChart(1, 1);
-        milFactoryGraph.setTitle("Total Military Factories after " + duration + " days");
+        milFactoryGraph.setTitle("Total Military Factories after " + duration + " days for " + countryName);
         milFactoryGraph.setXAxisTitle("Day switched from civilian to military factories");
         milFactoryGraph.setYAxisTitle("Military factories after " + duration + " days");
         milFactoryGraph.addSeries("Military factories after " + duration + " days", xAxisData, milFactoryData);
