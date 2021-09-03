@@ -24,7 +24,6 @@ SOFTWARE.
 
 import org.knowm.xchart.XChartPanel;
 import org.knowm.xchart.XYChart;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
@@ -44,7 +43,7 @@ public class Main {
     //the date the game starts at
     private static final String GAME_START_DATE = "01-01-1936";
 
-    private Main() {
+    public static void main(String[] args) {
         //ask the user which nation they want to calculate for
         State[] states;
         String countryName = "";
@@ -140,7 +139,7 @@ public class Main {
         outputWindow.toFront();
         outputWindow.setVisible(true);
     }
-    private State[] duplicateStateList(State[] original) {
+    private static State[] duplicateStateList(State[] original) {
         State[] newStateList = new State[original.length];
         for (int i = 0; i < original.length; i++) {
 
@@ -148,7 +147,7 @@ public class Main {
         }
         return newStateList;
     }
-    private State[] loadDataFile(String nationName) {
+    private static State[] loadDataFile(String nationName) {
         //create a structure to hold all of the states before they get added to the simulation properly
         ArrayList<State> initialStates = new ArrayList<>();
         //read required state and country data from the included data file
@@ -192,8 +191,5 @@ public class Main {
             lastInfrastructureLevel++;
         }
         return states;
-    }
-    public static void main(String[] args) {
-        new Main();
     }
 }
