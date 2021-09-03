@@ -174,8 +174,10 @@ public class Main {
             }
         } catch (FileNotFoundException e) {
             System.out.println("data file could not be opened");
+            System.exit(1);
         } catch (NumberFormatException e) {
             System.out.println("data file appears to have errors");
+            System.exit(2);
         }
         //sort the states by infrastructure level and then add them to the main array
         State[] states = new State[initialStates.size()];
