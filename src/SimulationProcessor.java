@@ -25,7 +25,7 @@ SOFTWARE.
 import java.util.concurrent.RecursiveAction;
 
 public class SimulationProcessor extends RecursiveAction {
-    private static final int SPLIT_THRESHOLD = 10;
+    private static final int SPLIT_THRESHOLD = 50;
 
     private final Country[] toProcess;
     private final int startPoint;
