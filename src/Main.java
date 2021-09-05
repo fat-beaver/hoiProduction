@@ -156,8 +156,7 @@ public class Main {
             Scanner nationDataReader = new Scanner(dataFile);
             //remove the human-readable headings
             nationDataReader.nextLine();
-            boolean reachedEnd = false;
-            while (nationDataReader.hasNextLine() && !reachedEnd) {
+            while (nationDataReader.hasNextLine()) {
                 String readLine = nationDataReader.nextLine();
                 String[] stateInfo = readLine.split(",");
                 if (stateInfo[0].toLowerCase().equals(nationName) || stateInfo[1].toLowerCase().equals(nationName)) {
@@ -167,9 +166,6 @@ public class Main {
                     int dockyards = Integer.parseInt(stateInfo[5]);
                     int civFactories = Integer.parseInt(stateInfo[6]);
                     initialStates.add(new State(infrastructure, buildingSlots, milFactories, dockyards, civFactories));
-                }
-                if (stateInfo[0].equals("0")) {
-                    reachedEnd = true;
                 }
             }
         } catch (FileNotFoundException e) {
