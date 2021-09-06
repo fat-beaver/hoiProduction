@@ -47,36 +47,41 @@ public class Country {
     private final static double TOOLS_TECHNOLOGY_CAP_INCREMENT = 0.1;
     private final static double TOOLS_SPECIAL_GAIN_INCREMENT = 0.1;
 
-    //specifics for this instance
-    private final int duration;
-    private final int cutoffDay;
-
-    //running total
-    private double totalMilProduction = 0;
-
-    //states storage
+    //general properties
+    private final String name;
+    private final double stability;
+    private final double warSupport;
     private final State[] states;
-
+    //running total
+    private double totalMilProduction;
     //tech progressions
     private int constructionTechLevel = 0;
     private int industryTechLevel = 0;
     private int toolsTechLevel = 0;
     private int toolsSpecialLevel = 0;
 
-    public Country(int duration, int cutoffDay, State[] states) {
-        this.duration = duration;
-        this.cutoffDay = cutoffDay;
-        this.states = states;
+    public Country(State[] stateList, double stability, double warSupport, String name) {
+        states = stateList;
+        this.stability = stability;
+        this.warSupport = warSupport;
+        this.name = name;
     }
-    public void calculateResults() {
+    public Country copy() {
+        State[] newStateList = new State[states.length];
+        for (int i = 0; i < states.length; i++) {
+            newStateList[i] = new State(states[i].getInfrastructureLevel(), states[i].getBuildingSlots(), states[i].getMilFactories(), states[i].getDockyards(), states[i].getCivFactories());
+        }
+        return new Country(newStateList, stability, warSupport, name);
+    }
+    public void calculateResults(int cutoffDay, int duration) {
         for (int currentDay = 0; currentDay < duration; currentDay++) {
             //check for technology advancement
             checkTechProgress(currentDay);
             //do the actual processing
-            dayLoop(currentDay);
+            dayLoop(currentDay, cutoffDay);
         }
     }
-    private void dayLoop(int currentDay) {
+    private void dayLoop(int currentDay, int cutoffDay) {
         //add the military production for the dZay to the total
         double milProductionMultiplier = 1 + INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT * industryTechLevel;
         for (State state : states) {
@@ -160,5 +165,8 @@ public class Country {
             milFactories += state.getMilFactories();
         }
         return milFactories;
+    }
+    public String getName() {
+        return name;
     }
 }
