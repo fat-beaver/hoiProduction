@@ -30,11 +30,13 @@ public class SimulationProcessor extends RecursiveAction {
     private final Country[] toProcess;
     private final int startPoint;
     private final int length;
+    private final int duration;
 
-    public SimulationProcessor(Country[] countryInstances, int start, int length) {
+    public SimulationProcessor(Country[] countryInstances, int start, int length, int duration) {
         toProcess = countryInstances;
         startPoint = start;
         this.length = length;
+        this.duration = duration;
     }
 
     @Override
@@ -43,12 +45,12 @@ public class SimulationProcessor extends RecursiveAction {
             processDirectly();
         } else {
             int splitPoint = length / 2;
-            invokeAll(new SimulationProcessor(toProcess, startPoint, splitPoint), new SimulationProcessor(toProcess, startPoint + splitPoint, length - splitPoint));
+            invokeAll(new SimulationProcessor(toProcess, startPoint, splitPoint, duration), new SimulationProcessor(toProcess, startPoint + splitPoint, length - splitPoint, duration));
         }
     }
     private void processDirectly() {
         for (int i = startPoint; i < startPoint + length; i++) {
-            toProcess[i].calculateResults();
+            toProcess[i].calculateResults(i, duration);
         }
     }
 }

@@ -2,3 +2,5 @@
 out/
 *.iml
 src/META-INF/*
+#people should replace this with their own game data, so it's not included in git
+hoiGameData/

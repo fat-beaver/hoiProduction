@@ -31,9 +31,7 @@ import java.io.FileNotFoundException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
@@ -42,8 +40,10 @@ public class Main {
     private static final int WINDOW_WIDTH = 1600;
     private static final int WINDOW_HEIGHT = 900;
 
-    //data file location
-    private static final String GAME_DATA_FILE = "stateInformationProcessed.csv";
+    //game file locations
+    private static final String GAME_FILES_PATH = "hoiGameData/";
+    private static final String STATES_PATH = "history/states/";
+    private static final String COUNTRIES_PATH = "history/countries";
 
     //the date the game starts at
     private static final String GAME_START_DATE = "01-01-1936";
@@ -61,6 +61,7 @@ public class Main {
 
 
     public Main() {
+        HashMap<String, Country> countries = loadGameData();
         //create a window and set some basic properties
         window = new JFrame();
         window.setTitle("Hearts of Iron IV Production Calculator");
@@ -93,7 +94,7 @@ public class Main {
         constraints.gridy = 2;
         constraints.gridwidth = 2;
         JButton goButton = new JButton("GO");
-        goButton.addActionListener(actionEvent -> doSimulation(endDateField.getText(), countryNameField.getText()));
+        goButton.addActionListener(actionEvent -> doSimulation(endDateField.getText(), countries.get(countryNameField.getText())));
         pane.add(goButton, constraints);
 
         //get all of the graphs ready
@@ -134,10 +135,9 @@ public class Main {
         window.toFront();
         window.setVisible(true);
         //do a simulation after everything has been set up
-        doSimulation(DEFAULT_END_DATE, DEFAULT_COUNTRY_CODE);
+        doSimulation(DEFAULT_END_DATE, countries.get(DEFAULT_COUNTRY_CODE));
     }
-    private void doSimulation(String rawDate, String countryName) {
-        State[] states = loadDataFile(countryName.toLowerCase());
+    private void doSimulation(String rawDate, Country country) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         int duration;
         try {
@@ -147,9 +147,9 @@ public class Main {
             duration = (int) TimeUnit.DAYS.convert(durationMilli, TimeUnit.MILLISECONDS);
             Country[] countryInstances = new Country[duration];
             for (int cutoffDay = 0; cutoffDay < duration; cutoffDay++) {
-                countryInstances[cutoffDay] = new Country(duration, cutoffDay, duplicateStateList(states));
+                countryInstances[cutoffDay] = country.copy();
             }
-            SimulationProcessor simProcessor = new SimulationProcessor(countryInstances, 0, countryInstances.length);
+            SimulationProcessor simProcessor = new SimulationProcessor(countryInstances, 0, countryInstances.length, duration);
             ForkJoinPool processingPool = new ForkJoinPool();
             processingPool.invoke(simProcessor);
             double[] productionData = new double[duration];
@@ -165,18 +165,11 @@ public class Main {
             productionGraph.updateXYSeries("Total military production", dateData, productionData, null);
             civFactoryGraph.updateXYSeries("Civilian factories", dateData, civFactoryData, null);
             milFactoryGraph.updateXYSeries("Military factories", dateData, milFactoryData, null);
-            civFactoryGraph.setTitle("Total Civilian Factories on " + rawDate + " (after " + duration + " days) for " + countryName);
-            milFactoryGraph.setTitle("Total Military Factories on " + rawDate + " (after " + duration + " days) for " + countryName);
-            productionGraph.setTitle("Total military production from " + GAME_START_DATE + " to " + rawDate + " (" + duration + " days) for " + countryName);
+            civFactoryGraph.setTitle("Total Civilian Factories on " + rawDate + " (after " + duration + " days) for " + country.getName());
+            milFactoryGraph.setTitle("Total Military Factories on " + rawDate + " (after " + duration + " days) for " + country.getName());
+            productionGraph.setTitle("Total military production from " + GAME_START_DATE + " to " + rawDate + " (" + duration + " days) for " + country.getName());
             window.repaint();
         } catch (ParseException ignored) {}
-    }
-    private State[] duplicateStateList(State[] original) {
-        State[] newStateList = new State[original.length];
-        for (int i = 0; i < original.length; i++) {
-            newStateList[i] = new State(original[i].getInfrastructureLevel(), original[i].getBuildingSlots(), original[i].getMilFactories(), original[i].getDockyards(), original[i].getCivFactories());
-        }
-        return newStateList;
     }
     private XYChart setGraphVisuals(XYChart graph, DecimalFormat cursorFormat) {
         //set all of the desired visuals for the graphs in one place
@@ -188,48 +181,145 @@ public class Main {
         graph.getStyler().setCustomCursorXDataFormattingFunction(x -> "Cut-off point: " + cursorFormat.format(x) + " years after start");
         return graph;
     }
-    private State[] loadDataFile(String nationName) {
-        //create a structure to hold all of the states before they get added to the simulation properly
-        ArrayList<State> initialStates = new ArrayList<>();
-        //read required state and country data from the included data file
-        File dataFile = new File(GAME_DATA_FILE);
-        try {
-            Scanner nationDataReader = new Scanner(dataFile);
-            //remove the human-readable headings
-            nationDataReader.nextLine();
-            while (nationDataReader.hasNextLine()) {
-                String readLine = nationDataReader.nextLine();
-                String[] stateInfo = readLine.split(",");
-                if (stateInfo[0].toLowerCase().equals(nationName) || stateInfo[1].toLowerCase().equals(nationName)) {
-                    int infrastructure = Integer.parseInt(stateInfo[2]);
-                    int buildingSlots= Integer.parseInt(stateInfo[3]);
-                    int milFactories = Integer.parseInt(stateInfo[4]);
-                    int dockyards = Integer.parseInt(stateInfo[5]);
-                    int civFactories = Integer.parseInt(stateInfo[6]);
-                    initialStates.add(new State(infrastructure, buildingSlots, milFactories, dockyards, civFactories));
+    private enum IndustrialLevel {
+        wasteland(0),
+        enclave(0),
+        tiny_island(0),
+        small_island(1),
+        pastoral(1),
+        rural(2),
+        town(4),
+        large_town(5),
+        city(6),
+        large_city(8),
+        metropolis(10),
+        megalopolis(12);
+        private final int buildingSlots;
+        IndustrialLevel(int buildingSlots) {
+            this.buildingSlots = buildingSlots;
+        }
+    }
+    private HashMap<String, Country> loadGameData() {
+        HashMap<String, ArrayList<State>> temporaryStates = new HashMap<>();
+        File gameStatesDir = new File(GAME_FILES_PATH + STATES_PATH);
+        //load all of the states from file
+        File[] stateFiles = gameStatesDir.listFiles();
+        if (stateFiles != null) {
+            for (File stateFile : stateFiles) {
+                try {
+                    Scanner fileReader = new Scanner(stateFile);
+                    String ownerCode = "";
+                    int infrastructureLevel = 0;
+                    int buildingSlots = 0;
+                    int milFactories = 0;
+                    int dockyards = 0;
+                    int civFactories = 0;
+                    while (fileReader.hasNextLine()) {
+                        String line = fileReader.nextLine();
+                        //stop once the 1939 section is reached
+                        if (line.equals("1939.1.1")) {break;}
+                        if (!line.equals("")) {
+                            //remove dev comments, if there are any
+                            if (line.contains("#")) {
+                                int commentIndex = line.indexOf("#");
+                                line = line.substring(0, commentIndex);
+                            }
+                            //get rid of all whitespace
+                            line = line.replaceAll("\\s","");
+                            //remove the inconsistent use of quotes around some values in the files
+                            line = line.replaceAll("\"", "");
+                            String[] splitLine = line.split("=");
+                            switch (splitLine[0]) {
+                                case "owner":
+                                    ownerCode = splitLine[1];
+                                    break;
+                                case "infrastructure":
+                                    infrastructureLevel = Integer.parseInt(splitLine[1]);
+                                    break;
+                                case "state_category":
+                                    IndustrialLevel industrialLevel = IndustrialLevel.valueOf(splitLine[1]);
+                                    buildingSlots = industrialLevel.buildingSlots;
+                                    break;
+                                case "arms_factory":
+                                    milFactories = Integer.parseInt(splitLine[1]);
+                                    break;
+                                case "dockyard":
+                                    dockyards = Integer.parseInt(splitLine[1]);
+                                    break;
+                                case "industrial_complex":
+                                    civFactories = Integer.parseInt(splitLine[1]);
+                                    break;
+                                default:
+                                    //do nothing if the line isn't one of the ones being looked for
+                                    break;
+                            }
+                        }
+                    }
+                    State newState = new State(infrastructureLevel, buildingSlots, milFactories, dockyards, civFactories);
+                    if (temporaryStates.containsKey(ownerCode)) {
+                        temporaryStates.get(ownerCode).add(newState);
+                    } else {
+                        ArrayList<State> stateArrayList = new ArrayList<>();
+                        stateArrayList.add(newState);
+                        temporaryStates.put(ownerCode, stateArrayList);
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
                 }
             }
-        } catch (FileNotFoundException e) {
-            System.out.println("data file could not be opened");
-            System.exit(1);
-        } catch (NumberFormatException e) {
-            System.out.println("data file appears to have errors");
-            System.exit(2);
         }
-        //sort the states by infrastructure level and then add them to the main array
-        State[] states = new State[initialStates.size()];
-        int lastInfrastructureLevel = 0;
-        int currentSlot = states.length - 1;
-        while (currentSlot >= 0) {
-            for (State state : initialStates) {
-                if (state.getInfrastructureLevel() == lastInfrastructureLevel) {
-                    states[currentSlot] = state;
-                    currentSlot--;
+        //load all of the countries from file
+        File gameCountriesDir = new File(GAME_FILES_PATH + COUNTRIES_PATH);
+        File[] countryFiles = gameCountriesDir.listFiles();
+        double stability = 0.5;
+        double warSupport = 0.5;
+        if (countryFiles != null) {
+            for (File countryFile : countryFiles) {
+                try {
+                    Scanner fileReader = new Scanner(countryFile);
+                    String countryCode = countryFile.getName().substring(0, 3);
+                    //only create this country if it has at least one state associated with it
+                    if (temporaryStates.containsKey(countryCode)) {
+                        while (fileReader.hasNextLine()) {
+                            String line = fileReader.nextLine();
+                            //stop once the 1939 section is reached
+                            if (line.equals("1939.1.1")) {break;}
+                            if (!line.equals("")) {
+                                //remove dev comments, if there are any
+                                if (line.contains("#")) {
+                                    int commentIndex = line.indexOf("#");
+                                    line = line.substring(0, commentIndex);
+                                }
+                                //get rid of all whitespace
+                                line = line.replaceAll("\\s","");
+                                //remove the inconsistent use of quotes around some values in the files
+                                line = line.replaceAll("\"", "");
+                                String[] splitLine = line.split("=");
+                                switch (splitLine[0]) {
+                                    case "set_stability" :
+                                        stability = Double.parseDouble(splitLine[1]);
+                                        break;
+                                    case "set_war_support":
+                                        warSupport = Double.parseDouble(splitLine[1]);
+                                    default:
+                                        //do nothing if the line isn't one of the ones being looked for
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
                 }
             }
-            lastInfrastructureLevel++;
         }
-        return states;
+        HashMap<String, Country> toReturn = new HashMap<>();
+        for (Map.Entry<String, ArrayList<State>> entry : temporaryStates.entrySet()) {
+            State[] statesList = entry.getValue().toArray(new State[0]);
+            Country country = new Country(statesList, stability, warSupport, entry.getKey());
+            toReturn.put(entry.getKey(), country);
+        }
+        return toReturn;
     }
     public static void main(String[] args) {
         SwingUtilities.invokeLater(Main::new);
