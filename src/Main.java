@@ -28,7 +28,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -98,12 +97,10 @@ public class Main {
         pane.add(goButton, constraints);
 
         //get all of the graphs ready
-        DecimalFormat graphCursorFormat = new DecimalFormat("#,###.###");
-        productionGraph = setGraphVisuals(new XYChart(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 3), graphCursorFormat);
+        productionGraph = setGraphVisuals(new XYChart(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 3));
         productionGraph.setXAxisTitle("Time switched from civilian to military factories (years after game start)");
         productionGraph.setYAxisTitle("Total military production");
         productionGraph.addSeries("Total military production", new double[] {0}, new double[] {0});
-        productionGraph.getStyler().setCustomCursorYDataFormattingFunction(graphCursorFormat::format);
         XChartPanel<XYChart> productionGraphPanel = new XChartPanel<>(productionGraph);
         productionGraphPanel.removeMouseListener(productionGraphPanel.getMouseListeners()[0]); //remove the right-click menu
         constraints.gridx = 2;
@@ -112,7 +109,7 @@ public class Main {
         constraints.gridheight = 5;
         pane.add(productionGraphPanel, constraints);
 
-        civFactoryGraph = setGraphVisuals(new XYChart(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 3), graphCursorFormat);
+        civFactoryGraph = setGraphVisuals(new XYChart(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 3));
         civFactoryGraph.setXAxisTitle("Time switched from civilian to military factories (years after game start)");
         civFactoryGraph.setYAxisTitle("Civilian factories");
         civFactoryGraph.addSeries("Civilian factories", new double[] {0}, new double[] {0});
@@ -121,7 +118,7 @@ public class Main {
         constraints.gridy = 5;
         pane.add(civGraphPanel, constraints);
 
-        milFactoryGraph = setGraphVisuals(new XYChart(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 3), graphCursorFormat);
+        milFactoryGraph = setGraphVisuals(new XYChart(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 3));
         milFactoryGraph.setXAxisTitle("Time switched from civilian to military factories (years after game start)");
         milFactoryGraph.setYAxisTitle("Military factories");
         milFactoryGraph.addSeries("Military factories", new double[] {0}, new double[] {0});
@@ -171,14 +168,12 @@ public class Main {
             window.repaint();
         } catch (ParseException ignored) {}
     }
-    private XYChart setGraphVisuals(XYChart graph, DecimalFormat cursorFormat) {
+    private XYChart setGraphVisuals(XYChart graph) {
         //set all of the desired visuals for the graphs in one place
         graph.getStyler().setLegendVisible(false);
         graph.getStyler().setMarkerSize(4);
         graph.getStyler().setXAxisMin(0d);
         graph.getStyler().setYAxisMin(0d);
-        graph.getStyler().setCursorEnabled(true);
-        graph.getStyler().setCustomCursorXDataFormattingFunction(x -> "Cut-off point: " + cursorFormat.format(x) + " years after start");
         return graph;
     }
     private enum IndustrialLevel {
