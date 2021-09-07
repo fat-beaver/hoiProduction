@@ -42,7 +42,7 @@ public class Main {
     //game file locations
     private static final String GAME_FILES_PATH = "hoiGameData/";
     private static final String STATES_PATH = "history/states/";
-    private static final String COUNTRIES_PATH = "history/countries";
+    private static final String COUNTRIES_PATH = "history/countries/";
 
     //the date the game starts at
     private static final String GAME_START_DATE = "01-01-1936";
