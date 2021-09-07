@@ -25,12 +25,10 @@ SOFTWARE.
 public class Country {
     //general constants
     private static final double PRODUCTION_PER_CIV_FACTORY = 5;
+    private static final double BASE_POLITICAL_POWER_GAIN = 1.0;
     private static final int MAXIMUM_CIV_FACTORIES_PER_PROJECT = 15;
-
-    //data from economy law
-    private final static double CONSUMER_GOODS_AMOUNT = 0.2;
-    private final static double ECONOMY_LAW_CIV_CONSTRUCTION_BONUS = 0;
-    private final static double ECONOMY_LAW_MIL_CONSTRUCTION_BONUS = 0.2;
+    private static final double STABILITY_MAXIMUM_FACTORY_BONUS = 0.2;
+    private static final double STABILITY_MAXIMUM_FACTORY_PENALTY = -0.5;
 
     //research constants
     private final static int[] CONSTRUCTION_TECHNOLOGY_INCREASES = {0, 365, 1095, 1825, 2555}; //days after 1936 for each
@@ -49,9 +47,12 @@ public class Country {
 
     //general properties
     private final String name;
-    private final double stability;
-    private final double warSupport;
+    private double stability;
+    private double warSupport;
     private final State[] states;
+    private EconomyTech economyTech = EconomyTech.civilian; //almost all nations start at civilian so this is fine for now
+    private int politicalPower = 0;
+
     //running total
     private double totalMilProduction;
     //tech progressions
@@ -59,7 +60,25 @@ public class Country {
     private int industryTechLevel = 0;
     private int toolsTechLevel = 0;
     private int toolsSpecialLevel = 0;
-
+    private enum EconomyTech {
+        civilian(0.00, 150, 0.35, -0.3, -0.3),
+        early   (0.15, 150, 0.30, -0.1, -0.1),
+        partial (0.25, 150, 0.25, +0.0, +0.1),
+        war     (0.50, 150, 0.20, +0.0, +0.2);
+        //total mobilisation should go here, but it is ignored because the manpower decrease it causes cannot be considered
+        private final double warSupport;
+        private final double politicalPowerCost;
+        private final double consumerGoods;
+        private final double civConstructionBonus;
+        private final double milConstructionBonus;
+        EconomyTech(double warSupport, double politicalPowerCost, double consumerGoods, double civConstructionBonus, double milConstructionBonus) {
+            this.warSupport = warSupport;
+            this.politicalPowerCost = politicalPowerCost;
+            this.consumerGoods = consumerGoods;
+            this.civConstructionBonus = civConstructionBonus;
+            this.milConstructionBonus = milConstructionBonus;
+        }
+    }
     public Country(State[] stateList, double stability, double warSupport, String name) {
         states = stateList;
         this.stability = stability;
@@ -82,13 +101,28 @@ public class Country {
         }
     }
     private void dayLoop(int currentDay, int cutoffDay) {
-        //add the military production for the dZay to the total
-        double milProductionMultiplier = 1 + INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT * industryTechLevel;
+        //calculate the effect of the current stability on factory output
+        double stabilityFactoryBonus;
+        if (stability >= 0.5) {
+            stabilityFactoryBonus = STABILITY_MAXIMUM_FACTORY_BONUS * (0.5 - stability);
+        } else {
+            stabilityFactoryBonus = STABILITY_MAXIMUM_FACTORY_PENALTY * (0.5 - stability);
+        }
+        //add the military production for the day to the total
+        double milProductionMultiplier = 1 + (INDUSTRY_TECHNOLOGY_PRODUCTION_INCREMENT * industryTechLevel) + stabilityFactoryBonus;
         for (State state : states) {
             totalMilProduction += (state.getMilProduction() * milProductionMultiplier);
         }
+        //add political power and change economy law if political power and war support allow for it and not at max already
+        politicalPower += BASE_POLITICAL_POWER_GAIN;
+        if (economyTech != EconomyTech.war) {
+            EconomyTech nextEconomyTech = EconomyTech.values()[economyTech.ordinal() + 1];
+            if (nextEconomyTech.politicalPowerCost <= politicalPower && nextEconomyTech.warSupport <= warSupport) {
+                economyTech = nextEconomyTech;
+            }
+        }
         //calculate how much construction to do
-        int effectiveCivFactories = (int) (countCivFactories() - (CONSUMER_GOODS_AMOUNT * (countCivFactories() + countMilFactories())));
+        int effectiveCivFactories = (int) (countCivFactories() - (economyTech.consumerGoods * (countCivFactories() + countMilFactories())));
         double constructionPoints = effectiveCivFactories * PRODUCTION_PER_CIV_FACTORY;
         //go through the list of states and assign the maximum number of factories to each construction until run out
         int currentState = 0;
@@ -101,11 +135,11 @@ public class Country {
                 //choose whether to build civ or mil factories after calculating the size of the construction block
                 if (currentDay < cutoffDay || states[currentState].isCivUnderConstruction()) {
                     //use the civ construction bonus
-                    constructionBlock *= (1 + ECONOMY_LAW_CIV_CONSTRUCTION_BONUS);
+                    constructionBlock *= (1 + economyTech.civConstructionBonus);
                     states[currentState].addCivConstruction(constructionBlock);
                 } else {
                     //use the mil construction bonus
-                    constructionBlock *= (1 + ECONOMY_LAW_MIL_CONSTRUCTION_BONUS);
+                    constructionBlock *= (1 + economyTech.milConstructionBonus);
                     states[currentState].addMilConstruction(constructionBlock);
                 }
             }
