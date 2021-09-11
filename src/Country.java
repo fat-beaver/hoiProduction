@@ -92,7 +92,7 @@ public class Country {
     public Country copy() {
         State[] newStateList = new State[states.size()];
         for (int i = 0; i < states.size(); i++) {
-            newStateList[i] = new State(states.get(i).getInfrastructureLevel(), states.get(i).getIndustrialLevel(), states.get(i).getDockyards(), states.get(i).getCivFactories(), states.get(i).getMilFactories());
+            newStateList[i] = new State(states.get(i).getInfrastructureLevel(), states.get(i).getIndustrialLevel(), states.get(i).getBonusBuildingSlots(), states.get(i).getDockyards(), states.get(i).getCivFactories(), states.get(i).getMilFactories());
         }
         return new Country(newStateList, stability, warSupport, name);
     }

@@ -8,6 +8,7 @@ public class GameDataLoader {
     //locations for state data
     private static final String STATE_INFRASTRUCTURE_PATH = "state/history/buildings/infrastructure";
     private static final String STATE_INDUSTRIAL_LEVEL_PATH = "state/state_category";
+    private static final String STATE_BUILDING_SLOTS_PATH = "state/add_extra_state_shared_building_slots";
     private static final String STATE_DOCKYARDS_PATH = "state/history/buildings/dockyard";
     private static final String STATE_CIV_FACTORIES_PATH = "state/history/buildings/industrial_complex";
     private static final String STATE_MIL_FACTORIES_PATH = "state/history/buildings/arms_factory";
@@ -66,10 +67,11 @@ public class GameDataLoader {
     private static State stateFromRaw(FileSection rawState) {
         int infrastructure = parseIntWithDefault(rawState.getValuesByPath(STATE_INFRASTRUCTURE_PATH)[0]);
         State.IndustrialLevel industrialLevel = State.IndustrialLevel.valueOf(rawState.getValuesByPath(STATE_INDUSTRIAL_LEVEL_PATH)[0]);
+        int bonusBuildingSlots = parseIntWithDefault(rawState.getValuesByPath(STATE_BUILDING_SLOTS_PATH)[0]);
         int dockyards = parseIntWithDefault(rawState.getValuesByPath(STATE_DOCKYARDS_PATH)[0]);
         int civFactories = parseIntWithDefault(rawState.getValuesByPath(STATE_CIV_FACTORIES_PATH)[0]);
         int milFactories = parseIntWithDefault(rawState.getValuesByPath(STATE_MIL_FACTORIES_PATH)[0]);
-        return new State(infrastructure, industrialLevel, dockyards, civFactories, milFactories);
+        return new State(infrastructure, industrialLevel, bonusBuildingSlots, dockyards, civFactories, milFactories);
     }
     private static int parseIntWithDefault(String toParse) {
         int toReturn;

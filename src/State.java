@@ -32,6 +32,7 @@ public class State {
     private final int baseInfrastructure;
     private final int baseDockyards; //Only recorded because they take up slots that cannot be used by factories.
     private final IndustrialLevel industrialLevel;
+    private final int bonusBuildingSlots;
     //current info
     private int buildingSlots;
     private final ArrayList<MilFactory> milFactories;
@@ -59,9 +60,11 @@ public class State {
             this.buildingSlots = buildingSlots;
         }
     }
-    public State(int infrastructure, IndustrialLevel industrialLevel, int dockyards, int civFactories, int milFactories) {
+    public State(int infrastructure, IndustrialLevel industrialLevel, int bonusBuildingSlots, int dockyards, int civFactories, int milFactories) {
         baseInfrastructure = infrastructure;
         this.industrialLevel = industrialLevel;
+        buildingSlots = industrialLevel.buildingSlots + bonusBuildingSlots;
+        this.bonusBuildingSlots = bonusBuildingSlots;
         baseDockyards = dockyards;
         this.civFactories = civFactories;
         this.milFactories = new ArrayList<>();
@@ -71,7 +74,7 @@ public class State {
     }
     public void setBuildingSlotsBonus(double newBonus) {
         //increase the concentrated/dispersed industry tech for building slots
-        buildingSlots = (int) (industrialLevel.buildingSlots * (1 + newBonus));
+        buildingSlots = (int) (industrialLevel.buildingSlots * (1 + newBonus)) + bonusBuildingSlots;
     }
     public void setProductionEfficiencyCapBonus(double capBonus) {
         for (MilFactory milFactory : milFactories) {
@@ -140,5 +143,8 @@ public class State {
     }
     public IndustrialLevel getIndustrialLevel() {
         return industrialLevel;
+    }
+    public int getBonusBuildingSlots() {
+        return bonusBuildingSlots;
     }
 }
