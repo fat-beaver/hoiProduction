@@ -22,6 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 public class Country {
     //general constants
     private static final double PRODUCTION_PER_CIV_FACTORY = 5;
@@ -47,9 +50,9 @@ public class Country {
 
     //general properties
     private final String name;
-    private double stability;
-    private double warSupport;
-    private final State[] states;
+    private final double stability;
+    private final double warSupport;
+    private final ArrayList<State> states;
     private EconomyTech economyTech = EconomyTech.civilian; //almost all nations start at civilian so this is fine for now
     private int politicalPower = 0;
 
@@ -79,16 +82,17 @@ public class Country {
             this.milConstructionBonus = milConstructionBonus;
         }
     }
-    public Country(State[] stateList, double stability, double warSupport, String name) {
-        states = stateList;
+    public Country(State[] initialStates, double stability, double warSupport, String name) {
+        states = new ArrayList<>();
+        Collections.addAll(states, initialStates);
         this.stability = stability;
         this.warSupport = warSupport;
         this.name = name;
     }
     public Country copy() {
-        State[] newStateList = new State[states.length];
-        for (int i = 0; i < states.length; i++) {
-            newStateList[i] = new State(states[i].getInfrastructureLevel(), states[i].getBuildingSlots(), states[i].getMilFactories(), states[i].getDockyards(), states[i].getCivFactories());
+        State[] newStateList = new State[states.size()];
+        for (int i = 0; i < states.size(); i++) {
+            newStateList[i] = new State(states.get(i).getInfrastructureLevel(), states.get(i).getIndustrialLevel(), states.get(i).getDockyards(), states.get(i).getCivFactories(), states.get(i).getMilFactories());
         }
         return new Country(newStateList, stability, warSupport, name);
     }
@@ -99,6 +103,9 @@ public class Country {
             //do the actual processing
             dayLoop(currentDay, cutoffDay);
         }
+    }
+    public void addState (State toAdd) {
+        states.add(toAdd);
     }
     private void dayLoop(int currentDay, int cutoffDay) {
         //calculate the effect of the current stability on factory output
@@ -126,21 +133,21 @@ public class Country {
         double constructionPoints = effectiveCivFactories * PRODUCTION_PER_CIV_FACTORY;
         //go through the list of states and assign the maximum number of factories to each construction until run out
         int currentState = 0;
-        while (constructionPoints > 0 && currentState != states.length) {
-            if (states[currentState].getFreeBuildingSlots() != 0) {
+        while (constructionPoints > 0 && currentState != states.size()) {
+            if (states.get(currentState).getFreeBuildingSlots() != 0) {
                 double constructionBlock = Math.min(constructionPoints, MAXIMUM_CIV_FACTORIES_PER_PROJECT * PRODUCTION_PER_CIV_FACTORY);
                 constructionPoints -= constructionBlock;
                 //account for construction speed bonus from technology
                 constructionBlock *= (1 + (CONSTRUCTION_TECHNOLOGY_INCREMENT * constructionTechLevel));
                 //choose whether to build civ or mil factories after calculating the size of the construction block
-                if (currentDay < cutoffDay || states[currentState].isCivUnderConstruction()) {
+                if (currentDay < cutoffDay || states.get(currentState).isCivUnderConstruction()) {
                     //use the civ construction bonus
                     constructionBlock *= (1 + economyTech.civConstructionBonus);
-                    states[currentState].addCivConstruction(constructionBlock);
+                    states.get(currentState).addCivConstruction(constructionBlock);
                 } else {
                     //use the mil construction bonus
                     constructionBlock *= (1 + economyTech.milConstructionBonus);
-                    states[currentState].addMilConstruction(constructionBlock);
+                    states.get(currentState).addMilConstruction(constructionBlock);
                 }
             }
             //move on to the next state

@@ -30,8 +30,8 @@ public class State {
     private static final int CIVILIAN_FACTORY_COST = 10800;
     //basic starting info
     private final int baseInfrastructure;
-    private final int baseBuildingSlots;
     private final int baseDockyards; //Only recorded because they take up slots that cannot be used by factories.
+    private final IndustrialLevel industrialLevel;
     //current info
     private int buildingSlots;
     private final ArrayList<MilFactory> milFactories;
@@ -41,11 +41,27 @@ public class State {
     private double currentCivConstruction;
     private boolean milUnderConstruction;
     private double currentMilConstruction;
-
-    public State(int infrastructure, int buildingSlots, int milFactories, int dockyards, int civFactories) {
+    public enum IndustrialLevel {
+        wasteland(0),
+        enclave(0),
+        tiny_island(0),
+        small_island(1),
+        pastoral(1),
+        rural(2),
+        town(4),
+        large_town(5),
+        city(6),
+        large_city(8),
+        metropolis(10),
+        megalopolis(12);
+        private final int buildingSlots;
+        IndustrialLevel(int buildingSlots) {
+            this.buildingSlots = buildingSlots;
+        }
+    }
+    public State(int infrastructure, IndustrialLevel industrialLevel, int dockyards, int civFactories, int milFactories) {
         baseInfrastructure = infrastructure;
-        baseBuildingSlots = buildingSlots;
-        this.buildingSlots = buildingSlots;
+        this.industrialLevel = industrialLevel;
         baseDockyards = dockyards;
         this.civFactories = civFactories;
         this.milFactories = new ArrayList<>();
@@ -55,7 +71,7 @@ public class State {
     }
     public void setBuildingSlotsBonus(double newBonus) {
         //increase the concentrated/dispersed industry tech for building slots
-        buildingSlots = (int) (baseBuildingSlots * (1 + newBonus));
+        buildingSlots = (int) (industrialLevel.buildingSlots * (1 + newBonus));
     }
     public void setProductionEfficiencyCapBonus(double capBonus) {
         for (MilFactory milFactory : milFactories) {
@@ -119,12 +135,10 @@ public class State {
             milUnderConstruction = false;
         }
     }
-
-    public int getBuildingSlots() {
-        return buildingSlots;
-    }
-
     public int getDockyards() {
         return baseDockyards;
+    }
+    public IndustrialLevel getIndustrialLevel() {
+        return industrialLevel;
     }
 }
